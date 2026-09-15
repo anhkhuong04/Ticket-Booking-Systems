@@ -446,6 +446,17 @@ erDiagram
 | `GET` | `/api/showtimes` |
 | `GET` | `/api/showtimes/{id}/seats` |
 
+`GET /api/showtimes` requires `movieId` and ISO `date` (`YYYY-MM-DD`), accepts optional
+`cinemaId`, and returns only `SCHEDULED` showtimes whose `sales_close_at` is later than the
+server time. All timestamps are UTC ISO-8601 instants. `GET /api/showtimes/{id}/seats` follows
+the same sales-open rule and reads the seat snapshot from PostgreSQL.
+
+`POST /api/admin/price-profiles`, `POST /api/admin/price-profiles/{id}/rules`, and
+`POST /api/admin/showtimes` enforce role and cinema scope at the backend. Global price profiles
+require `SUPER_ADMIN`; cinema-scoped profiles and showtimes require access to their cinema.
+Showtime creation snapshots prices using `showtime override -> cinema profile -> system profile`
+and snapshots the active auditorium seat layout.
+
 ### Booking
 
 | Method | Endpoint |

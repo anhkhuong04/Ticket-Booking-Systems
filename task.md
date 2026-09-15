@@ -129,23 +129,23 @@
 
 ## Giai đoạn 4 — Suất chiếu và bảng giá
 
-- [ ] **LAK-040 · P0 — Price profile và price rule**
+- [x] **LAK-040 · P0 — Price profile và price rule**
   - Migration/domain cho `price_profiles`, `price_rules`; số tiền `BIGINT`, hiệu lực theo thời gian và priority rõ ràng.
   - Cài thứ tự giá: override suất → bảng giá chi nhánh → mặc định hệ thống.
   - Phụ thuộc: LAK-031.
 
-- [ ] **LAK-041 · P0 — Tạo suất chiếu an toàn**
+- [x] **LAK-041 · P0 — Tạo suất chiếu an toàn**
   - Migration/domain cho `showtimes`, `showtime_prices`, `showtime_seats`.
   - Tính `end_at` gồm thời lượng phim và dọn phòng; dùng PostgreSQL exclusion constraint chống trùng lịch.
   - Khi tạo suất: snapshot ghế và giá; `sales_close_at` trước giờ chiếu 5 phút.
   - Phụ thuộc: LAK-030, LAK-031, LAK-040.
 
-- [ ] **LAK-042 · P0 — API tra cứu suất chiếu và sơ đồ ghế**
+- [x] **LAK-042 · P0 — API tra cứu suất chiếu và sơ đồ ghế**
   - `GET /api/showtimes` chỉ trả suất còn mở bán; `GET /api/showtimes/{id}/seats` đọc trạng thái từ PostgreSQL.
   - Trả thời gian UTC và contract đủ để frontend hiển thị giờ Việt Nam.
   - Phụ thuộc: LAK-041.
 
-- [ ] **LAK-043 · P0 — Frontend chọn rạp, ngày và suất chiếu**
+- [x] **LAK-043 · P0 — Frontend chọn rạp, ngày và suất chiếu**
   - Điều hướng từ phim tới lịch chiếu; hiển thị giờ `Asia/Ho_Chi_Minh` và deep-link bằng URL.
   - Luồng customer không hiển thị suất đã đóng bán, nhất quán với contract của LAK-042 và system design.
   - Phụ thuộc: LAK-032, LAK-042.

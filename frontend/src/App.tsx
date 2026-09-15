@@ -6,6 +6,7 @@ import { AdminAuditoriumsPage, AdminCinemasPage, AdminMoviesPage } from './featu
 import { AdminShell } from './features/admin/AdminShell'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
 import { CustomerShell } from './features/catalog/CustomerShell'
+import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage'
 
 function AccountPage() {
   const { user, logout } = useAuth()
@@ -27,6 +28,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:movieId" element={<MovieDetailPage />} />
+      <Route path="/movies/:movieId/showtimes" element={<ShowtimeSelectionPage />} />
       <Route path="/cinemas" element={<CinemasPage />} />
     </Route>
     <Route path="/login" element={<LoginPage />} />

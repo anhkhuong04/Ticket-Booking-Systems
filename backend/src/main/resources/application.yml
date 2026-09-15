@@ -58,3 +58,10 @@ app:
     initial-backoff: ${OUTBOX_INITIAL_BACKOFF:5s}
     max-backoff: ${OUTBOX_MAX_BACKOFF:15m}
     processing-timeout: ${OUTBOX_PROCESSING_TIMEOUT:2m}
+  notification:
+    email:
+      enabled: ${MAIL_ENABLED:false}
+      provider: ${MAIL_PROVIDER:disabled}
+      endpoint: ${MAIL_ENDPOINT:}
+      api-token: ${MAIL_API_TOKEN:}
+      from-address: ${MAIL_FROM_ADDRESS:}

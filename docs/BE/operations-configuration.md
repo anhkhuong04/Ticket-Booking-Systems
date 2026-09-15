@@ -14,6 +14,7 @@ hoặc file `.env` local bị Git bỏ qua.
 | HTTP | `BACKEND_PORT`, `CORS_ALLOWED_ORIGINS` | Chỉ khai báo origin frontend được phép. |
 | Logging | `LOG_LEVEL` | Mặc định `INFO`; không đặt `DEBUG` ở production khi không điều tra sự cố. |
 | Outbox | `OUTBOX_ENABLED`, `OUTBOX_BATCH_SIZE`, `OUTBOX_POLL_INTERVAL`, `OUTBOX_MAX_ATTEMPTS`, `OUTBOX_INITIAL_BACKOFF`, `OUTBOX_MAX_BACKOFF`, `OUTBOX_PROCESSING_TIMEOUT` | PostgreSQL vẫn là nguồn sự thật; Redis không quyết định trạng thái outbox. |
+| Email | `MAIL_ENABLED`, `MAIL_PROVIDER`, `MAIL_ENDPOINT`, `MAIL_API_TOKEN`, `MAIL_FROM_ADDRESS` | Chỉ hỗ trợ provider `http` ở nền tảng hiện tại; `MAIL_API_TOKEN` là secret. |
 
 Tham khảo `.env.example` để tạo `.env` local. Không commit `.env`, token, API
 key, password, payload thanh toán hay nội dung email.

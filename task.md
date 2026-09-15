@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-015 — Notification và email adapter nền tảng`.
+**Task tiếp theo:** `LAK-020 — Schema identity và bootstrap role`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -64,7 +64,7 @@
   - Chuẩn hóa secret qua environment, profile local/test/prod và chính sách log an toàn.
   - Hoàn tất khi có tài liệu cấu hình và test không ghi secret/token vào log.
 
-- [ ] **LAK-015 · P1 — Notification và email adapter nền tảng**
+- [x] **LAK-015 · P1 — Notification và email adapter nền tảng**
   - Xử lý email từ outbox qua interface provider, template hóa nội dung và retry an toàn.
   - Cấu hình provider bằng environment; không ghi PII, token hoặc nội dung nhạy cảm vào log.
   - Phụ thuộc: LAK-013.

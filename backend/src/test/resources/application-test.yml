@@ -1,0 +1,11 @@
+spring:
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+app:
+  outbox:
+    enabled: false

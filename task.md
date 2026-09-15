@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-012 — Nền kiểm thử tích hợp và dữ liệu test`.
+**Task tiếp theo:** `LAK-013 — Transactional outbox nền tảng`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -49,7 +49,7 @@
   - Thêm `request_id` xuyên suốt request/response/log; không lộ stack trace hoặc dữ liệu nhạy cảm.
   - Hoàn tất khi có test MVC cho validation và từng nhóm lỗi chính.
 
-- [ ] **LAK-012 · P0 — Nền kiểm thử tích hợp và dữ liệu test**
+- [x] **LAK-012 · P0 — Nền kiểm thử tích hợp và dữ liệu test**
   - Tạo test profile, integration test PostgreSQL/Redis thật bằng container và fixture tối thiểu.
   - Kiểm tra Flyway từ database rỗng; tách unit, integration và concurrency test để CI chạy ổn định.
   - Hoàn tất khi CI chứng minh migration và test tích hợp chạy lặp lại được.

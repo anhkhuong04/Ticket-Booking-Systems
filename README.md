@@ -71,6 +71,13 @@ Backend:
 
 ```powershell
 cd backend
+./mvnw.cmd test
+```
+
+Lệnh trên chạy unit test và architecture test, không cần Docker. Để chạy thêm integration test và concurrency test với PostgreSQL/Redis tạm thời qua Testcontainers, Docker phải sẵn sàng:
+
+```powershell
+cd backend
 ./mvnw.cmd verify
 ```
 

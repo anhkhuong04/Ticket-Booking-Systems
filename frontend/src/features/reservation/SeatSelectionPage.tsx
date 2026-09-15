@@ -27,8 +27,7 @@ function idempotencyKey(): string {
   return crypto.randomUUID()
 }
 
-function remainingSeconds(hold: SeatHold): number {
-  const serverOffset = Date.parse(hold.serverNow) - Date.now()
+function remainingSeconds(hold: SeatHold, serverOffset: number): number {
   return Math.max(0, Math.ceil((Date.parse(hold.expiresAt) - (Date.now() + serverOffset)) / 1000))
 }
 
@@ -47,6 +46,7 @@ export function SeatSelectionPage() {
   const [seatMap, setSeatMap] = useState<LoadState>({ kind: 'loading' })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [hold, setHold] = useState<SeatHold | null>(null)
+  const [serverOffset, setServerOffset] = useState(0)
   const [pending, setPending] = useState(false)
   const [holdRequestKey, setHoldRequestKey] = useState<string | null>(null)
   const [voucherCode, setVoucherCode] = useState('')
@@ -82,6 +82,7 @@ export function SeatSelectionPage() {
     void getSeatHold(savedHoldId).then(
       (saved) => {
         if (saved.status === 'ACTIVE') {
+          setServerOffset(Date.parse(saved.serverNow) - Date.now())
           setHold(saved); setSelectedIds(saved.showtimeSeatIds)
           setVoucherCode(sessionStorage.getItem(checkoutVoucherStorageKey(saved.id)) ?? '')
           setCheckoutUncertain(sessionStorage.getItem(checkoutStorageKey(saved.id)) !== null)
@@ -98,14 +99,14 @@ export function SeatSelectionPage() {
     if (!hold) return
     const timer = window.setInterval(() => {
       setTick((value) => value + 1)
-      if (remainingSeconds(hold) === 0) {
+      if (remainingSeconds(hold, serverOffset) === 0) {
         setExpired(true)
         clearHold()
         void load()
       }
     }, 1_000)
     return () => window.clearInterval(timer)
-  }, [clearHold, hold, load])
+  }, [clearHold, hold, load, serverOffset])
   useEffect(() => {
     let socket: WebSocket | undefined
     let reconnect: number | undefined
@@ -148,7 +149,7 @@ export function SeatSelectionPage() {
   const selectedSeats = useMemo(() => seatMap.kind === 'loaded'
     ? seatMap.data.seats.filter((seat) => selectedIds.includes(seat.id)) : [], [seatMap, selectedIds])
   const total = selectedSeats.reduce((sum, seat) => sum + seat.price, 0)
-  const seconds = hold ? remainingSeconds(hold) : null
+  const seconds = hold ? remainingSeconds(hold, serverOffset) : null
 
   const toggleSeat = (seat: ShowtimeSeat) => {
     if (hold || seat.status !== 'AVAILABLE' || seatMap.kind !== 'loaded') return
@@ -169,6 +170,7 @@ export function SeatSelectionPage() {
     try {
       const created = await createSeatHold(showtimeId, selectedIds, requestKey)
       sessionStorage.setItem(storageKey(showtimeId), created.id)
+      setServerOffset(Date.parse(created.serverNow) - Date.now())
       setHold(created)
       setSelectedIds(created.showtimeSeatIds)
       setHoldRequestKey(null)

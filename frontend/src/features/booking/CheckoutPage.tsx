@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getBooking, type Booking } from './bookingApi'
 
-type LoadState = { kind: 'loading' } | { kind: 'loaded'; booking: Booking } | { kind: 'error'; message: string }
+type LoadState = { kind: 'loading' } | { kind: 'loaded'; booking: Booking; serverOffset: number } | { kind: 'error'; message: string }
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
 const showtimeDate = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
@@ -13,8 +13,7 @@ function errorMessage(error: unknown): string {
   return 'Không thể kết nối tới hệ thống. Vui lòng thử lại.'
 }
 
-function remainingSeconds(booking: Booking): number {
-  const serverOffset = Date.parse(booking.serverNow) - Date.now()
+function remainingSeconds(booking: Booking, serverOffset: number): number {
   return Math.max(0, Math.ceil((Date.parse(booking.paymentDeadline) - (Date.now() + serverOffset)) / 1_000))
 }
 
@@ -30,7 +29,7 @@ export function CheckoutPage() {
   useEffect(() => {
     let active = true
     void getBooking(bookingId).then(
-      (booking) => { if (active) setState({ kind: 'loaded', booking }) },
+      (booking) => { if (active) setState({ kind: 'loaded', booking, serverOffset: Date.parse(booking.serverNow) - Date.now() }) },
       (error) => { if (active) setState({ kind: 'error', message: errorMessage(error) }) },
     )
     return () => { active = false }
@@ -45,7 +44,7 @@ export function CheckoutPage() {
   if (state.kind === 'error') return <main className="grid min-h-screen place-items-center bg-background p-6"><section role="alert" className="max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-red-800"><p>{state.message}</p><button className="mt-4 min-h-11 font-semibold underline" onClick={() => { setState({ kind: 'loading' }); setRetry((value) => value + 1) }}>Thử lại</button></section></main>
 
   const booking = state.booking
-  const seconds = remainingSeconds(booking)
+  const seconds = remainingSeconds(booking, state.serverOffset)
   const expired = seconds === 0 || booking.status === 'EXPIRED'
   return <main className="min-h-screen bg-background pb-28 pt-6 sm:py-10"><div className="mx-auto max-w-5xl px-4 sm:px-6">
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5"><div><Link to="/movies" className="text-sm font-semibold text-primary hover:underline">← Chọn phim khác</Link><h1 className="mt-2 text-2xl font-bold text-text-primary">Xác nhận đặt vé</h1><p className="mt-1 text-sm text-text-secondary">{booking.movieTitle} · {booking.cinemaName} · {booking.auditoriumName} · {showtimeDate.format(new Date(booking.startAt))}</p><p className="mt-1 text-sm text-text-secondary">Mã đặt vé: {booking.bookingCode}</p></div><p aria-live="polite" className={`rounded-lg px-3 py-2 text-sm font-bold ${expired ? 'bg-red-50 text-red-800' : seconds <= 60 ? 'bg-amber-100 text-amber-900' : 'bg-primary-soft text-primary'}`}>{expired ? 'Đã hết hạn thanh toán' : `Thanh toán trong ${countdown(seconds)}`}</p></header>

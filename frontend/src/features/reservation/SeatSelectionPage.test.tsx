@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,6 +18,33 @@ vi.mock('../booking/bookingApi', () => ({ checkout: vi.fn() }))
 const mockedSeatMap = vi.mocked(getShowtimeSeatMap)
 const mockedCreateHold = vi.mocked(createSeatHold)
 const mockedCheckout = vi.mocked(checkout)
+const mockedGetHold = vi.mocked(getSeatHold)
+
+class FakeWebSocket {
+  static instances: FakeWebSocket[] = []
+  onopen: (() => void) | null = null
+  onmessage: ((event: MessageEvent) => void) | null = null
+  onclose: (() => void) | null = null
+
+  constructor(_url: string) { FakeWebSocket.instances.push(this) }
+
+  close() { this.onclose?.() }
+  emitMessage(payload: unknown) { this.onmessage?.({ data: JSON.stringify(payload) } as MessageEvent) }
+  emitClose() { this.onclose?.() }
+}
+
+function activeHold() {
+  const now = new Date()
+  return {
+    id: 'hold-1', showtimeId: 'showtime-1', status: 'ACTIVE' as const, serverNow: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 300_000).toISOString(), hardExpiresAt: new Date(now.getTime() + 300_000).toISOString(),
+    showtimeSeatIds: ['standard-1'],
+  }
+}
+
+function axiosFailure(status: number, message = 'Request failed') {
+  return Object.assign(new Error(message), { isAxiosError: true, response: { status, data: { message } } })
+}
 
 describe('SeatSelectionPage', () => {
   beforeEach(() => {
@@ -25,7 +52,7 @@ describe('SeatSelectionPage', () => {
     sessionStorage.clear()
     mockedCreateHold.mockReset()
     mockedCheckout.mockReset()
-    vi.mocked(getSeatHold).mockReset()
+    mockedGetHold.mockReset()
     vi.mocked(releaseSeatHold).mockReset()
     mockedSeatMap.mockResolvedValue({
       showtimeId: 'showtime-1', movieId: 'movie-1', movieTitle: 'Demo Movie', cinemaId: 'cinema-1',
@@ -36,6 +63,8 @@ describe('SeatSelectionPage', () => {
         { id: 'couple-2', rowLabel: 'B', seatNumber: 2, seatType: 'COUPLE', pairKey: 'B-1-2', status: 'AVAILABLE', price: 180_000 },
       ],
     })
+    FakeWebSocket.instances = []
+    vi.stubGlobal('WebSocket', FakeWebSocket)
   })
 
   it('selects a couple pair together and sends both seat IDs to the backend', async () => {
@@ -99,5 +128,62 @@ describe('SeatSelectionPage', () => {
     await user.type(await screen.findByRole('textbox'), 'save50')
     await user.click(screen.getByRole('button', { name: 'Tiếp tục xác nhận' }))
     expect(mockedCheckout).toHaveBeenCalledWith('hold-1', expect.any(String), 'SAVE50')
+  })
+
+  it('reconciles the authoritative seat map after a realtime event and warns on disconnect', async () => {
+    render(<MemoryRouter initialEntries={['/showtimes/showtime-1/seats']}><Routes>
+      <Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} />
+    </Routes></MemoryRouter>)
+
+    await screen.findByRole('button', { name: /A1/i })
+    const socket = FakeWebSocket.instances[0]
+    socket.emitMessage({ type: 'SEATS_UPDATED', showtimeId: 'showtime-1' })
+    await waitFor(() => expect(mockedSeatMap).toHaveBeenCalledTimes(2))
+    socket.emitClose()
+    expect(await screen.findByRole('status')).toHaveTextContent(/realtime/i)
+  })
+
+  it('reconciles a conflict and shows the expired-hold dialog for a 410 response', async () => {
+    const user = userEvent.setup()
+    mockedCreateHold.mockRejectedValueOnce(axiosFailure(409))
+    render(<MemoryRouter initialEntries={['/showtimes/showtime-1/seats']}><Routes>
+      <Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} />
+    </Routes></MemoryRouter>)
+
+    await user.click(await screen.findByRole('button', { name: /A1/i }))
+    await user.click(screen.getByRole('button', { name: /Giữ ghế/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/vừa được/i)
+    await waitFor(() => expect(mockedSeatMap).toHaveBeenCalledTimes(2))
+
+    cleanup()
+    sessionStorage.setItem('lak:seat-hold:showtime-1', 'hold-1')
+    mockedGetHold.mockRejectedValueOnce(axiosFailure(410))
+    render(<MemoryRouter initialEntries={['/showtimes/showtime-1/seats']}><Routes>
+      <Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} />
+    </Routes></MemoryRouter>)
+    expect(await screen.findByRole('dialog')).toHaveTextContent(/Thời gian/i)
+  })
+
+  it('reuses the persisted checkout idempotency key after a network failure and refresh', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('lak:seat-hold:showtime-1', 'hold-1')
+    mockedGetHold.mockResolvedValue(activeHold())
+    mockedCheckout.mockRejectedValueOnce(new Error('offline'))
+    const first = render(<MemoryRouter initialEntries={['/showtimes/showtime-1/seats']}><Routes>
+      <Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} />
+    </Routes></MemoryRouter>)
+
+    await user.click(await screen.findByRole('button', { name: /Tiếp tục xác nhận/i }))
+    const firstKey = mockedCheckout.mock.calls[0][1]
+    expect(await screen.findByRole('status')).toHaveTextContent(/chờ xác nhận/i)
+
+    first.unmount()
+    mockedGetHold.mockResolvedValue(activeHold())
+    mockedCheckout.mockRejectedValueOnce(new Error('offline'))
+    render(<MemoryRouter initialEntries={['/showtimes/showtime-1/seats']}><Routes>
+      <Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} />
+    </Routes></MemoryRouter>)
+    await user.click(await screen.findByRole('button', { name: /Tiếp tục xác nhận/i }))
+    expect(mockedCheckout.mock.calls[1][1]).toBe(firstKey)
   })
 })

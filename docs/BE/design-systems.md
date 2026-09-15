@@ -520,6 +520,15 @@ API giữ ghế, checkout, refund và webhook phải hỗ trợ idempotency.
 số tiền VND và hard deadline rồi tạo/replay payment `INITIATED`; URL thanh toán do provider adapter trả về. Webhook công khai
 chỉ chấp nhận raw payload có chữ ký hợp lệ; redirect URL không được xác nhận thanh toán.
 
+`GET /api/payments/{id}/status` chỉ cho chủ payment và trả cả `status` của payment lẫn `bookingStatus`. Client chỉ poll
+endpoint này sau redirect; chỉ cặp `SUCCESS`/`PAID` mới là thanh toán thành công. `PAYMENT_REVIEW` hoặc `REFUND_PENDING`
+không được hiển thị là thành công, kể cả khi payment đã có `SUCCESS`.
+
+Payment xác minh sau hard deadline tạo outbox event idempotent `refund.late_payment_requested`. Refund worker khóa payment,
+booking và `refunds.payment_id`, tạo đúng một refund `REQUESTED`, giữ booking ở `REFUND_PENDING`, rồi gọi provider bằng
+refund ID ổn định. Timeout được retry; lỗi không retry được chuyển `REFUND_FAILED` để xử lý thủ công. Không phát hành vé
+trong toàn bộ nhánh thanh toán đến trễ.
+
 `POST /api/seat-holds` yêu cầu access token của `CUSTOMER`, header `Idempotency-Key` và body
 `showtimeId`, `showtimeSeatIds`. Response trả ID hold, danh sách snapshot seat ID,
 `expiresAt`, `hardExpiresAt` và `serverNow`; client dùng deadline server để đếm ngược. Reuse

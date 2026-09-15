@@ -22,7 +22,9 @@ import com.lak.moviebooking.payment.application.PaymentManagement;
 import com.lak.moviebooking.payment.application.PaymentProvider;
 import com.lak.moviebooking.payment.application.PaymentProviderEvent;
 import com.lak.moviebooking.payment.application.PaymentProviderRequest;
+import com.lak.moviebooking.payment.application.PaymentRefundAccess;
 import com.lak.moviebooking.payment.application.PaymentView;
+import com.lak.moviebooking.payment.application.RefundablePayment;
 import com.lak.moviebooking.showtime.application.ShowtimeSeatInventory;
 import com.lak.moviebooking.ticketing.application.TicketIssuer;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -30,7 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class JdbcPaymentManagement implements PaymentManagement {
+class JdbcPaymentManagement implements PaymentManagement, PaymentRefundAccess {
 
     private static final String INITIATED = "INITIATED";
     private final JdbcTemplate jdbcTemplate;
@@ -79,7 +81,7 @@ class JdbcPaymentManagement implements PaymentManagement {
             throw ApplicationException.expired("BOOKING_PAYMENT_EXPIRED", "Payment deadline has expired");
         }
         PaymentRow existing = activePayment(booking.id());
-        if (existing != null) return view(existing, booking.bookingCode(), provider, now);
+        if (existing != null) return view(existing, booking, provider, now);
 
         PaymentRow payment = new PaymentRow(UUID.randomUUID(), booking.id(), provider.name(), transactionId(), booking.totalAmount(),
                 "VND", INITIATED, null, booking.hardDeadline());
@@ -88,7 +90,7 @@ class JdbcPaymentManagement implements PaymentManagement {
                 VALUES (?,?,?,?,?,?,?,NULL,?,?,?)
                 """, payment.id(), payment.bookingId(), payment.provider(), payment.providerTransactionId(), payment.amount(),
                 payment.currency(), payment.status(), atUtc(payment.expiresAt()), atUtc(now), atUtc(now));
-        return view(payment, booking.bookingCode(), provider, now);
+        return view(payment, booking, provider, now);
     }
 
     @Override
@@ -98,7 +100,14 @@ class JdbcPaymentManagement implements PaymentManagement {
         if (!booking.userId().equals(userId)) {
             throw ApplicationException.forbidden("PAYMENT_FORBIDDEN", "You do not have access to this payment");
         }
-        return view(payment, booking.bookingCode(), provider(payment.provider()), clock.instant());
+        return view(payment, booking, provider(payment.provider()), clock.instant());
+    }
+
+    @Override
+    public RefundablePayment lockForRefund(UUID paymentId) {
+        PaymentRow payment = payment(paymentId, true);
+        return new RefundablePayment(payment.id(), payment.bookingId(), payment.provider(), payment.providerTransactionId(),
+                payment.amount(), payment.currency(), payment.status());
     }
 
     @Override
@@ -201,9 +210,9 @@ class JdbcPaymentManagement implements PaymentManagement {
                 .orElseThrow(() -> ApplicationException.notFound("PAYMENT_NOT_FOUND", "Payment was not found"));
     }
 
-    private PaymentView view(PaymentRow payment, String bookingCode, PaymentProvider provider, Instant now) {
-        String url = "INITIATED".equals(payment.status()) ? provider.paymentUrl(request(payment, bookingCode)) : null;
-        return new PaymentView(payment.id(), bookingCode, payment.provider(), payment.amount(), payment.currency(), payment.status(),
+    private PaymentView view(PaymentRow payment, PaymentBooking booking, PaymentProvider provider, Instant now) {
+        String url = "INITIATED".equals(payment.status()) ? provider.paymentUrl(request(payment, booking.bookingCode())) : null;
+        return new PaymentView(payment.id(), booking.bookingCode(), booking.status(), payment.provider(), payment.amount(), payment.currency(), payment.status(),
                 url, payment.expiresAt(), payment.paidAt(), now);
     }
 

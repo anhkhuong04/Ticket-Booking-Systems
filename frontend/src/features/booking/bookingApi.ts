@@ -16,7 +16,7 @@ export type Booking = {
   cinemaName: string
   auditoriumName: string
   startAt: string
-  status: 'PENDING_PAYMENT' | 'PAID' | 'EXPIRED' | 'PAYMENT_REVIEW' | 'CANCELLED'
+  status: 'PENDING_PAYMENT' | 'PAID' | 'EXPIRED' | 'PAYMENT_REVIEW' | 'REFUND_PENDING' | 'CANCELLED'
   subtotal: number
   voucherCode: string | null
   discountAmount: number

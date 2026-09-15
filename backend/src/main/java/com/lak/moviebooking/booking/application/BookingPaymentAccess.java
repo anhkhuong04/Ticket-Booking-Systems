@@ -15,4 +15,6 @@ public interface BookingPaymentAccess {
     void markExpired(UUID bookingId, Instant now);
 
     void markPaymentReview(UUID bookingId, Instant now);
+
+    void markRefundPending(UUID bookingId, Instant now);
 }

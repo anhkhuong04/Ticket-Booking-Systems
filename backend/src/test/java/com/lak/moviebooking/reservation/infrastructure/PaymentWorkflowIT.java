@@ -88,6 +88,7 @@ class PaymentWorkflowIT extends SeatHoldManagementIT {
 
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM payments WHERE id=?", String.class, payment.id())).isEqualTo("SUCCESS");
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM bookings WHERE id=?", String.class, booking.id())).isEqualTo("PAYMENT_REVIEW");
+        assertThat(payments.find(fixture.firstUserId(), payment.id()).bookingStatus()).isEqualTo("PAYMENT_REVIEW");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, booking.id())).isZero();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM outbox_events WHERE event_type='refund.late_payment_requested' AND aggregate_id=?", Integer.class,
                 payment.id())).isEqualTo(1);

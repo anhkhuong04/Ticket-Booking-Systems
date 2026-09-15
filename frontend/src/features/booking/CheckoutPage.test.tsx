@@ -11,7 +11,7 @@ const mockedGetBooking = vi.mocked(getBooking)
 describe('CheckoutPage', () => {
   beforeEach(() => { cleanup(); vi.useRealTimers(); mockedGetBooking.mockReset() })
 
-  it('renders the backend booking snapshot and payment deadline', async () => {
+  it('renders the backend booking snapshot and enables payment only for a payable booking', async () => {
     mockedGetBooking.mockResolvedValue({
       id: 'booking-1', bookingCode: 'LAK-1', holdId: 'hold-1', showtimeId: 'showtime-1', movieTitle: 'Demo Movie',
       cinemaName: 'LAK Demo', auditoriumName: 'Room 1', startAt: '2026-01-01T10:00:00Z', status: 'PENDING_PAYMENT',
@@ -27,8 +27,9 @@ describe('CheckoutPage', () => {
 
     expect(await screen.findByText(/Mã đặt vé: LAK-1/)).toBeInTheDocument()
     expect(screen.getByText('A1')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Thanh toán 180\.000/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Thanh toán 180.000/ })).toBeEnabled()
   })
+
   it('continues counting down from the received server deadline', async () => {
     vi.useFakeTimers()
     const now = new Date('2026-01-01T10:00:00Z')

@@ -163,6 +163,12 @@ class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess {
                 atUtc(now), bookingId);
     }
 
+    @Override
+    public void markRefundPending(UUID bookingId, Instant now) {
+        jdbcTemplate.update("UPDATE bookings SET status='REFUND_PENDING',updated_at=? WHERE id=? AND status='PAYMENT_REVIEW'",
+                atUtc(now), bookingId);
+    }
+
     private UUID claimIdempotency(UUID userId, BookingCheckoutCommand command, Instant now) {
         jdbcTemplate.update("DELETE FROM booking_checkout_requests WHERE expires_at <= ?", atUtc(now));
         UUID proposedBookingId = UUID.randomUUID();

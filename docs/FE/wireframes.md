@@ -2,7 +2,7 @@
 
 > **Phiên bản:** 1.0  
 > **Phạm vi:** Customer website, Staff scanner và Admin console  
-> **Tài liệu liên quan:** `overview.md`, `design-systems.md`, `ui-ux.md`, `task.md`  
+> **Tài liệu liên quan:** `docs/overview.md`, `docs/BE/design-systems.md`, `docs/FE/ui-ux.md`, `task.md`
 > **Mục tiêu:** Cung cấp layout contract đủ rõ để stakeholder hình dung sản phẩm và coding agent triển khai UI mà không phải tự suy diễn bố cục chính.
 
 ---
@@ -23,7 +23,7 @@ Tài liệu này tập trung vào:
 
 Tài liệu này **không phải visual mockup pixel-perfect**.
 
-Các chi tiết sau phải lấy từ `ui-ux.md`:
+Các chi tiết sau phải lấy từ `docs/FE/ui-ux.md`:
 
 - màu sắc;
 - typography;
@@ -35,7 +35,7 @@ Các chi tiết sau phải lấy từ `ui-ux.md`:
 - component state;
 - content guideline.
 
-Các trạng thái nghiệp vụ phải lấy từ backend/system design.
+Các trạng thái nghiệp vụ phải lấy từ backend/system design tại `docs/BE/design-systems.md`.
 
 ---
 

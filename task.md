@@ -1,6 +1,6 @@
 # LAK Movie Ticket Booking — Kế hoạch triển khai
 
-> Nguồn phân tích: `overview.md`, `docs/design-systems.md` và `docs/ui-ux.md`.
+> Nguồn phân tích: `docs/overview.md`, `docs/BE/design-systems.md`, `docs/FE/ui-ux.md` và `docs/FE/wireframes.md`.
 > Cập nhật tiến độ bằng checkbox và trạng thái; chỉ đánh dấu hoàn tất khi đạt tiêu chí nghiệm thu của task.
 
 ## Quy ước quản lý
@@ -8,7 +8,7 @@
 - Trạng thái: `[ ]` chưa làm, `[-]` đang làm, `[x]` hoàn tất, `[!]` bị chặn.
 - Ưu tiên: `P0` bắt buộc cho luồng đặt vé an toàn; `P1` bắt buộc để hoàn tất MVP; `P2` hoàn thiện vận hành; `P3` mở rộng sau MVP.
 - Mỗi task phải có migration/API/test tương ứng nếu thay đổi dữ liệu hoặc hành vi backend.
-- Mỗi frontend task phải xử lý loading, empty, error, retry, responsive và accessibility; đọc phần liên quan trong `docs/ui-ux.md` trước khi triển khai.
+- Mỗi frontend task phải xử lý loading, empty, error, retry, responsive và accessibility; đọc phần liên quan trong `docs/FE/ui-ux.md` và `docs/FE/wireframes.md` trước khi triển khai.
 - Sau mỗi task quan trọng: chạy kiểm tra phù hợp, cập nhật file này và tạo một Conventional Commit riêng. Chỉ push khi người dùng yêu cầu.
 
 ## Nguyên tắc không được phá vỡ

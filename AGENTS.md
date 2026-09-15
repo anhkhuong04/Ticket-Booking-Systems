@@ -3,9 +3,9 @@
 ## Phạm vi và nguồn sự thật
 
 - File này áp dụng cho toàn repository. Quy tắc backend và frontend chỉ áp dụng cho phần tương ứng.
-- Trước khi thiết kế hoặc sửa hệ thống, đọc phần liên quan trong `docs/design-systems.md`.
-- Với frontend, đọc thêm phần màn hình liên quan trong `docs/ui-ux.md`.
-- `docs/design-systems.md` là nguồn sự thật cho nghiệp vụ, database và API; `docs/ui-ux.md` là nguồn sự thật cho trải nghiệm và giao diện. Không tự thêm nghiệp vụ hoặc thay đổi quyết định đã chốt.
+- Trước khi thiết kế hoặc sửa hệ thống, đọc phần liên quan trong `docs/BE/design-systems.md`.
+- Với frontend, đọc thêm phần màn hình liên quan trong `docs/FE/ui-ux.md` và `docs/FE/wireframes.md`.
+- `docs/BE/design-systems.md` là nguồn sự thật cho nghiệp vụ, database và API; `docs/FE/ui-ux.md` là nguồn sự thật cho trải nghiệm và giao diện; `docs/FE/wireframes.md` là layout contract. Không tự thêm nghiệp vụ hoặc thay đổi quyết định đã chốt.
 - Yêu cầu trực tiếp của người dùng được ưu tiên. Nếu yêu cầu mâu thuẫn với invariant hệ thống, nêu rõ xung đột và tác động trước khi triển khai.
 
 ## Skill routing
@@ -38,7 +38,7 @@ Một task có thể cần nhiều skill; không bỏ qua skill chuyên biệt c
 
 - Dùng React, TypeScript, Vite, React Router, Axios và Tailwind CSS; giữ TypeScript strict và không thêm dependency không cần thiết.
 - Backend là nguồn sự thật cho giá, quyền, ghế, booking và payment. WebSocket chỉ thông báo; client phải đồng bộ lại với API.
-- Giữ design token, responsive behavior và accessibility theo `docs/ui-ux.md`; không truyền đạt trạng thái chỉ bằng màu.
+- Giữ design token, responsive behavior và accessibility theo `docs/FE/ui-ux.md`; tuân theo layout contract trong `docs/FE/wireframes.md`; không truyền đạt trạng thái chỉ bằng màu.
 - Không reset countdown từ server, không xác nhận thanh toán từ redirect URL và không tạo booking trùng khi retry.
 - UI phải thể hiện rõ loading, empty, error, retry và trạng thái chưa chắc chắn; không hiển thị dữ liệu nhạy cảm hoặc lỗi nội bộ.
 

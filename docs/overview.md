@@ -24,7 +24,7 @@
 
 - **Architecture:** Modular Monolith kết hợp Layered Architecture
 - **Java 21 + Spring Boot:** xây dựng REST API và xử lý nghiệp vụ.
-- **Spring Security + JWT:** xác thực và phân quyền User/Admin.
+- **Spring Security + JWT:** xác thực và phân quyền theo bốn vai trò `CUSTOMER`, `TICKET_STAFF`, `CINEMA_MANAGER`, `SUPER_ADMIN`.
 - **Spring Data JPA:** truy cập và thao tác dữ liệu.
 - **Bean Validation:** kiểm tra dữ liệu đầu vào.
 - **WebSocket:** cập nhật trạng thái ghế theo thời gian thực.
@@ -55,7 +55,7 @@ Hệ thống sử dụng kiến trúc **Modular Monolith**, phù hợp với ph�
 - Xem lịch sử đặt vé và trạng thái vé.
 - Cập nhật thông tin cá nhân và đổi mật khẩu.
 
-### 4.2. Phía quản trị viên
+### 4.2. Phía quản trị và vận hành
 
 - Xem dashboard về số vé, lượt đặt và doanh thu.
 - Quản lý phim, thể loại, poster, trailer và trạng thái phát hành.
@@ -66,6 +66,14 @@ Hệ thống sử dụng kiến trúc **Modular Monolith**, phù hợp với ph�
 - Quản lý tài khoản; khóa/mở khóa và phân quyền.
 - Tra cứu vé bằng mã vé hoặc thông tin người dùng.
 - Xem báo cáo doanh thu theo thời gian, phim hoặc rạp.
+
+Các chức năng quản trị được phân quyền theo phạm vi: `CINEMA_MANAGER` chỉ thao tác trong chi nhánh được gán; `SUPER_ADMIN` quản trị toàn hệ thống.
+
+### 4.3. Phía nhân viên soát vé
+
+- Quét mã QR và tra cứu vé thủ công tại rạp được phân công.
+- Xem kết quả kiểm vé, bao gồm vé hợp lệ, đã sử dụng hoặc không thuộc đúng rạp.
+- Không được truy cập dữ liệu hoặc thực hiện thao tác ngoài phạm vi chi nhánh.
 
 ## 5. Luồng nghiệp vụ chính
 
@@ -79,5 +87,4 @@ Hệ thống sử dụng kiến trúc **Modular Monolith**, phù hợp với ph�
 - Mỗi vai trò chỉ được truy cập đúng chức năng đã phân quyền.
 - Giao diện phải dễ sử dụng và hiển thị tốt trên máy tính lẫn điện thoại.
 
-> Tài liệu này chỉ mô tả tổng quan, công nghệ và chức năng của hệ thống; chưa bao gồm phân tích hoặc thiết kế cơ sở dữ liệu.
-
+> Tài liệu này chỉ mô tả tổng quan, công nghệ và chức năng của hệ thống; chưa bao gồm phân tích hoặc thiết kế cơ sở dữ liệu. Chi tiết nghiệp vụ, database, API và phân quyền được chốt tại `docs/BE/design-systems.md`; UI/UX và wireframe được chốt lần lượt tại `docs/FE/ui-ux.md` và `docs/FE/wireframes.md`.

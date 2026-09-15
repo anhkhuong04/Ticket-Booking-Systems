@@ -4,7 +4,7 @@
 > **Phạm vi:** Website khách hàng, trang quản trị và giao diện quét vé  
 > **Phong cách:** Clean, professional, light cinema  
 > **Mục tiêu sử dụng:** Source of truth cho thiết kế UI/UX, frontend implementation, coding agent và stakeholder review  
-> **Nguồn:** `overview.md`, `design-systems.md`, phiên bản `ui-ux.md` trước đó và các quyết định UX đã chốt trong quá trình thiết kế.
+> **Nguồn:** `docs/overview.md`, `docs/BE/design-systems.md`, phiên bản UI/UX trước đó và các quyết định UX đã chốt trong quá trình thiết kế.
 
 ---
 
@@ -2155,9 +2155,13 @@ Sau tài liệu này, nên duy trì thêm:
 
 ```text
 docs/
-├── ui-ux.md
-├── wireframes.md
-└── ui-flows.md
+├── overview.md
+├── BE/
+│   └── design-systems.md
+└── FE/
+    ├── ui-ux.md
+    ├── wireframes.md
+    └── ui-flows.md
 ```
 
 ## `wireframes.md`

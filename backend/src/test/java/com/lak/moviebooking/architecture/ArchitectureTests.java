@@ -28,6 +28,7 @@ class ArchitectureTests {
 			"showtime",
 			"reservation",
 			"booking",
+			"voucher",
 			"payment",
 			"refund",
 			"ticketing",

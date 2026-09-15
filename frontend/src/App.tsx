@@ -8,6 +8,8 @@ import { AdminShell } from './features/admin/AdminShell'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
 import { CustomerShell } from './features/catalog/CustomerShell'
 import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage'
+import { SeatSelectionPage } from './features/reservation/SeatSelectionPage'
+import { CheckoutPage } from './features/booking/CheckoutPage'
 
 function AccountPage() {
   const { user, logout } = useAuth()
@@ -37,6 +39,8 @@ function App() {
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<AccountPage />} /></Route>
+    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} /></Route>
+    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/checkout/:bookingId" element={<CheckoutPage />} /></Route>
     <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff" element={<RoleShell title="Khu vực nhân viên" />} /></Route>
     <Route element={<ProtectedRoute roles={['CINEMA_MANAGER', 'SUPER_ADMIN']} />}>
       <Route element={<AdminShell />}>

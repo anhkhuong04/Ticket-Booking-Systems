@@ -6,3 +6,7 @@ spring:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
+
+app:
+  demo-seed:
+    enabled: ${DEMO_SEED_ENABLED:true}

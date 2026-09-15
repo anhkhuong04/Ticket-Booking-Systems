@@ -358,8 +358,8 @@ VALID → CANCELLED
 
 | Entity | Trường chính | Ràng buộc |
 |---|---|---|
-| `vouchers` | `id`, `code`, `discount_type`, `discount_value`, `min_order`, `max_discount`, `start_at`, `end_at`, `usage_limit`, `per_user_limit`, `status` | Code unique |
-| `voucher_redemptions` | `id`, `voucher_id`, `user_id`, `booking_id`, `discount_amount`, `status` | Unique `(voucher_id, booking_id)` |
+| `vouchers` | `id`, `code`, `discount_type`, `discount_value`, `min_order_amount`, `max_discount_amount`, `starts_at`, `ends_at`, `usage_limit`, `usage_count`, `per_user_limit`, `status` | Code unique; quota không âm và không vượt `usage_limit` |
+| `voucher_redemptions` | `id`, `voucher_id`, `user_id`, `booking_id`, `discount_amount`, `redeemed_at` | Một redemption cho mỗi booking |
 
 ### 9.8. Vé và vận hành
 
@@ -514,6 +514,21 @@ its snapped prices/seats.
 | `429` | Vượt giới hạn request |
 
 API giữ ghế, checkout, refund và webhook phải hỗ trợ idempotency.
+
+`POST /api/seat-holds` yêu cầu access token của `CUSTOMER`, header `Idempotency-Key` và body
+`showtimeId`, `showtimeSeatIds`. Response trả ID hold, danh sách snapshot seat ID,
+`expiresAt`, `hardExpiresAt` và `serverNow`; client dùng deadline server để đếm ngược. Reuse
+cùng key với payload khác bị từ chối; reuse cùng payload replay resource đã tạo, không giữ ghế
+lần hai. `GET`/`DELETE` chỉ cho chủ hold; hold hết hạn trả `410` sau khi PostgreSQL giải phóng ghế.
+
+`POST /api/bookings/checkout` yêu cầu access token `CUSTOMER`, header `Idempotency-Key` và body
+`holdId` và tùy chọn `voucherCode`. Backend khóa hold/ghế, snapshot giá từ `showtime_prices` vào
+`booking_items`, khóa voucher theo code để kiểm tra thời hạn, min order, quota tổng/quota theo user rồi ghi
+`voucher_redemptions`; tất cả cùng transaction với booking. Discount và voucher code được snapshot vào booking,
+tạo booking `PENDING_PAYMENT` và chuyển ghế sang `PAYMENT_PENDING`; checkout không gia hạn hold. Response trả
+booking code, voucher, các khoản tiền, item snapshot, `paymentDeadline`, `hardDeadline` và `serverNow`. Reuse key
+với cùng hold và voucher replay booking; reuse key với payload khác bị từ chối. `GET
+/api/bookings/{code}` chỉ cho chủ booking.
 
 ---
 

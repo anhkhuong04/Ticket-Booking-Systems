@@ -158,24 +158,24 @@
 
 ## Giai đoạn 5 — Giữ ghế an toàn
 
-- [ ] **LAK-050 · P0 — Seat hold transaction và API idempotent**
+- [-] **LAK-050 · P0 — Seat hold transaction và API idempotent**
   - Migration cho `seat_holds`, `seat_hold_items`; `POST/GET/DELETE /api/seat-holds`.
   - Lock ghế theo ID ổn định, thu hồi hold hết hạn, kiểm tra toàn bộ rồi cập nhật atomic; xung đột trả `409`, hết hạn trả `410`.
   - Luôn giữ cả cặp ghế đôi; idempotency key không tạo hold trùng.
   - Phụ thuộc: LAK-021, LAK-042.
 
-- [ ] **LAK-051 · P0 — Expiration job, Redis TTL và WebSocket**
+- [-] **LAK-051 · P0 — Expiration job, Redis TTL và WebSocket**
   - Job idempotent chạy mỗi 15–30 giây, PostgreSQL quyết định việc giải phóng hold.
   - Redis TTL là tín hiệu hỗ trợ; phát `SEATS_UPDATED`/`HOLD_EXPIRED` sau commit qua outbox.
   - Hệ thống vẫn đúng khi Redis/WebSocket lỗi.
   - Phụ thuộc: LAK-050, LAK-013.
 
-- [ ] **LAK-052 · P0 — Concurrency test chống bán/giữ trùng ghế**
+- [-] **LAK-052 · P0 — Concurrency test chống bán/giữ trùng ghế**
   - Test nhiều request đồng thời, giữ nhiều ghế rollback toàn bộ, ghế đôi, retry và hold vừa hết hạn.
   - Hoàn tất khi mọi kịch bản chỉ có tối đa một request thắng và database không có trạng thái mâu thuẫn.
   - Phụ thuộc: LAK-050, LAK-051.
 
-- [ ] **LAK-053 · P0 — Frontend sơ đồ ghế và countdown**
+- [-] **LAK-053 · P0 — Frontend sơ đồ ghế và countdown**
   - Hiển thị AVAILABLE/HELD/SOLD/BLOCKED, loại ghế, ghế đôi; chọn ghế có hỗ trợ bàn phím và không chỉ dùng màu.
   - Countdown dùng deadline từ server, không reset khi refresh; WebSocket chỉ kích hoạt đồng bộ lại REST API.
   - Xử lý rõ `409`, `410`, mất kết nối và retry không tạo hold trùng.
@@ -183,25 +183,25 @@
 
 ## Giai đoạn 6 — Booking, voucher và checkout
 
-- [ ] **LAK-061 · P0 — Booking checkout idempotent**
+- [-] **LAK-061 · P0 — Booking checkout idempotent**
   - Migration/domain cho `bookings`, `booking_items`; kiểm tra hold thuộc user và còn hạn.
   - Chưa tạo foreign key `voucher_id` khi bảng voucher chưa tồn tại; LAK-063 sẽ bổ sung cột/FK bằng migration tiến tới.
   - Backend lấy giá, snapshot ghế/loại/đơn giá, tạo `PENDING_PAYMENT`, chuyển ghế `PAYMENT_PENDING`; checkout không gia hạn hold.
   - Test idempotency, ownership, deadline, tổng tiền và rollback.
   - Phụ thuộc: LAK-040, LAK-050, LAK-013.
 
-- [ ] **LAK-062 · P0 — Frontend xác nhận đơn và checkout**
+- [-] **LAK-062 · P0 — Frontend xác nhận đơn và checkout**
   - Hiển thị snapshot ghế, giá, giảm giá, phí và tổng tiền từ backend; không tự tính giá quyết định.
   - Idempotency key ổn định khi retry; bảo toàn lựa chọn và thể hiện hold/payment deadline.
   - Phụ thuộc: LAK-061.
 
-- [ ] **LAK-063 · P1 — Voucher cơ bản**
+- [-] **LAK-063 · P1 — Voucher cơ bản**
   - Migration/domain cho `vouchers`, `voucher_redemptions`; bổ sung `bookings.voucher_id` và foreign key bằng migration tiến tới.
   - Hỗ trợ thời hạn, min order, max discount, usage/per-user limit.
   - Áp dụng và ghi nhận voucher trong cùng transaction checkout; chống vượt quota khi concurrent; bổ sung nhập/xóa voucher trên UI.
   - Phụ thuộc: LAK-061.
 
-- [ ] **LAK-064 · P0 — Nền tảng phát hành vé idempotent**
+- [-] **LAK-064 · P0 — Nền tảng phát hành vé idempotent**
   - Migration/domain cho `tickets`; unique một ticket cho mỗi booking, ticket code unique, QR token ngẫu nhiên mạnh và chỉ lưu `qr_token_hash`.
   - Cung cấp application interface để payment gọi xuyên module trong cùng transaction; chưa phát hành vé nếu chưa có payment hợp lệ.
   - Test concurrent/retry chứng minh một booking chỉ tạo đúng một ticket.

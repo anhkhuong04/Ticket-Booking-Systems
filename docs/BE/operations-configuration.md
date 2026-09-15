@@ -13,6 +13,9 @@ hoặc file `.env` local bị Git bỏ qua.
 | Redis | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | Password không được ghi vào log. |
 | HTTP | `BACKEND_PORT`, `CORS_ALLOWED_ORIGINS` | Chỉ khai báo origin frontend được phép. |
 | Logging | `LOG_LEVEL` | Mặc định `INFO`; không đặt `DEBUG` ở production khi không điều tra sự cố. |
+| Demo local | `DEMO_SEED_ENABLED` | Chỉ profile `local`; import idempotent phim CGV đã xác minh và dữ liệu vận hành LAK hư cấu. Không có tác dụng ở `test`/`prod`. |
+| Seat hold | `SEAT_HOLD_TTL`, `SEAT_HOLD_IDEMPOTENCY_TTL`, `SEAT_HOLD_EXPIRY_POLL_INTERVAL`, `SEAT_HOLD_EXPIRY_BATCH_SIZE` | PostgreSQL quyết định trạng thái; Redis chỉ mirror TTL sau commit. Poll interval phải nằm trong 15–30 giây. |
+| Booking | `BOOKING_CHECKOUT_IDEMPOTENCY_TTL`, `PAYMENT_GRACE_PERIOD` | Checkout không gia hạn hold. Grace period mặc định 2 phút tạo `hard_deadline` sau `payment_deadline`. |
 | Outbox | `OUTBOX_ENABLED`, `OUTBOX_BATCH_SIZE`, `OUTBOX_POLL_INTERVAL`, `OUTBOX_MAX_ATTEMPTS`, `OUTBOX_INITIAL_BACKOFF`, `OUTBOX_MAX_BACKOFF`, `OUTBOX_PROCESSING_TIMEOUT` | PostgreSQL vẫn là nguồn sự thật; Redis không quyết định trạng thái outbox. |
 | Email | `MAIL_ENABLED`, `MAIL_PROVIDER`, `MAIL_ENDPOINT`, `MAIL_API_TOKEN`, `MAIL_FROM_ADDRESS` | Chỉ hỗ trợ provider `http` ở nền tảng hiện tại; `MAIL_API_TOKEN` là secret. |
 

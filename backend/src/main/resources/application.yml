@@ -58,6 +58,14 @@ app:
     initial-backoff: ${OUTBOX_INITIAL_BACKOFF:5s}
     max-backoff: ${OUTBOX_MAX_BACKOFF:15m}
     processing-timeout: ${OUTBOX_PROCESSING_TIMEOUT:2m}
+  reservation:
+    hold-ttl: ${SEAT_HOLD_TTL:5m}
+    idempotency-ttl: ${SEAT_HOLD_IDEMPOTENCY_TTL:24h}
+    expiry-poll-interval: ${SEAT_HOLD_EXPIRY_POLL_INTERVAL:20s}
+    expiry-batch-size: ${SEAT_HOLD_EXPIRY_BATCH_SIZE:100}
+  booking:
+    checkout-idempotency-ttl: ${BOOKING_CHECKOUT_IDEMPOTENCY_TTL:24h}
+    payment-grace-period: ${PAYMENT_GRACE_PERIOD:2m}
   notification:
     email:
       enabled: ${MAIL_ENABLED:false}

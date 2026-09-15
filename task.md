@@ -1,6 +1,6 @@
 # LAK Movie Ticket Booking — Kế hoạch triển khai
 
-> Nguồn phân tích: `overview.md` và `docs/design-systems.md` (tài liệu system design hiện có).
+> Nguồn phân tích: `overview.md`, `docs/design-systems.md` và `docs/ui-ux.md`.
 > Cập nhật tiến độ bằng checkbox và trạng thái; chỉ đánh dấu hoàn tất khi đạt tiêu chí nghiệm thu của task.
 
 ## Quy ước quản lý
@@ -24,7 +24,7 @@
 
 ## Đường găng MVP
 
-`Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Payment → Ticket → Scanner/Reporting`
+`Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
 **Task tiếp theo:** `LAK-010 — Hoàn thiện module skeleton và kiểm soát boundary`.
 
@@ -39,11 +39,13 @@
 
 - [ ] **LAK-010 · P0 — Hoàn thiện module skeleton và kiểm soát boundary**
   - Bổ sung các module từ system design còn thiếu: `authorization`, `refund`, `notification`, `reporting`, `audit`.
-  - Chuẩn hóa cấu trúc `api/application/domain/infrastructure`; thêm kiểm thử kiến trúc để ngăn truy cập repository xuyên module.
-  - Hoàn tất khi build pass và boundary sai bị test phát hiện.
+  - Chuẩn hóa cấu trúc `api/application/domain/infrastructure`; chỉ application interface hoặc domain event contract được công khai cho module khác, `common` chỉ chứa technical capability dùng chung.
+  - Thêm kiểm thử kiến trúc để ngăn truy cập repository xuyên module, dependency cycle và phụ thuộc vào implementation package của module khác.
+  - Hoàn tất khi build pass và các vi phạm boundary đại diện đều bị test phát hiện.
 
 - [ ] **LAK-011 · P0 — Chuẩn hóa API và xử lý lỗi**
   - Định nghĩa response lỗi thống nhất, validation, pagination/filter convention và ánh xạ `400/401/403/409/410/422/429`.
+  - Chốt contract `Idempotency-Key`: phạm vi actor/operation, payload hash, xử lý request đồng thời, lưu/replay response và thời hạn lưu phù hợp.
   - Thêm `request_id` xuyên suốt request/response/log; không lộ stack trace hoặc dữ liệu nhạy cảm.
   - Hoàn tất khi có test MVC cho validation và từng nhóm lỗi chính.
 
@@ -55,7 +57,7 @@
 - [ ] **LAK-013 · P0 — Transactional outbox nền tảng**
   - Migration/repository/job cho `outbox_events`; ghi event cùng transaction nghiệp vụ, publish/retry idempotent.
   - Dùng cho email và WebSocket; theo dõi retry và dead-letter/manual review.
-  - Phụ thuộc: LAK-012.
+  - Phụ thuộc: LAK-010, LAK-012.
 
 - [ ] **LAK-014 · P1 — Observability và cấu hình vận hành cơ bản**
   - Structured logging với `request_id`, `booking_code`, `payment_id`; metrics/health cho dependency quan trọng.
@@ -71,11 +73,12 @@
 
 - [ ] **LAK-020 · P0 — Schema identity và bootstrap role**
   - Migration cho `users`, `roles`, `user_roles`, `refresh_tokens`, `password_reset_tokens`.
-  - Unique có điều kiện cho email/phone, hash token, trạng thái tài khoản và seed bốn role đã chốt.
+  - Chuẩn hóa email/phone trước khi lưu; unique có điều kiện trên giá trị chuẩn hóa, hash token, trạng thái tài khoản và seed bốn role đã chốt.
   - Phụ thuộc: LAK-010, LAK-012.
 
 - [ ] **LAK-021 · P0 — Đăng ký, đăng nhập, refresh và logout**
   - Triển khai BCrypt/Argon2, access JWT ngắn hạn, rotation/revoke refresh token và cookie `HttpOnly/Secure/SameSite` theo môi trường.
+  - Chốt CORS và cơ chế chống CSRF cho các endpoint dùng cookie ngay trong task này, không trì hoãn lớp bảo vệ nền đến hardening cuối.
   - Rate limit login; không log password/token; test token hết hạn, reuse và tài khoản bị khóa.
   - Phụ thuộc: LAK-020.
 
@@ -143,12 +146,14 @@
   - Phụ thuộc: LAK-041.
 
 - [ ] **LAK-043 · P0 — Frontend chọn rạp, ngày và suất chiếu**
-  - Điều hướng từ phim tới lịch chiếu; hiển thị giờ `Asia/Ho_Chi_Minh`, trạng thái đóng bán và deep-link bằng URL.
+  - Điều hướng từ phim tới lịch chiếu; hiển thị giờ `Asia/Ho_Chi_Minh` và deep-link bằng URL.
+  - Luồng customer không hiển thị suất đã đóng bán, nhất quán với contract của LAK-042 và system design.
   - Phụ thuộc: LAK-032, LAK-042.
 
 - [ ] **LAK-044 · P1 — UI quản trị suất chiếu và bảng giá**
   - CRUD lịch chiếu/giá, cảnh báo xung đột phòng và xác nhận tác vụ ảnh hưởng người mua.
-  - Audit đổi giá và hủy suất; enforce cinema scope.
+  - Audit đổi giá và các yêu cầu hủy suất; enforce cinema scope.
+  - Chưa cho hủy suất có booking đã thanh toán cho đến khi LAK-089 hoàn tất luồng bồi hoàn; không để CRUD đơn giản làm mất quyền lợi người mua.
   - Phụ thuộc: LAK-022, LAK-033, LAK-041.
 
 ## Giai đoạn 5 — Giữ ghế an toàn
@@ -180,6 +185,7 @@
 
 - [ ] **LAK-061 · P0 — Booking checkout idempotent**
   - Migration/domain cho `bookings`, `booking_items`; kiểm tra hold thuộc user và còn hạn.
+  - Chưa tạo foreign key `voucher_id` khi bảng voucher chưa tồn tại; LAK-063 sẽ bổ sung cột/FK bằng migration tiến tới.
   - Backend lấy giá, snapshot ghế/loại/đơn giá, tạo `PENDING_PAYMENT`, chuyển ghế `PAYMENT_PENDING`; checkout không gia hạn hold.
   - Test idempotency, ownership, deadline, tổng tiền và rollback.
   - Phụ thuộc: LAK-040, LAK-050, LAK-013.
@@ -190,9 +196,16 @@
   - Phụ thuộc: LAK-061.
 
 - [ ] **LAK-063 · P1 — Voucher cơ bản**
-  - Migration/domain cho `vouchers`, `voucher_redemptions`; thời hạn, min order, max discount, usage/per-user limit.
+  - Migration/domain cho `vouchers`, `voucher_redemptions`; bổ sung `bookings.voucher_id` và foreign key bằng migration tiến tới.
+  - Hỗ trợ thời hạn, min order, max discount, usage/per-user limit.
   - Áp dụng và ghi nhận voucher trong cùng transaction checkout; chống vượt quota khi concurrent; bổ sung nhập/xóa voucher trên UI.
   - Phụ thuộc: LAK-061.
+
+- [ ] **LAK-064 · P0 — Nền tảng phát hành vé idempotent**
+  - Migration/domain cho `tickets`; unique một ticket cho mỗi booking, ticket code unique, QR token ngẫu nhiên mạnh và chỉ lưu `qr_token_hash`.
+  - Cung cấp application interface để payment gọi xuyên module trong cùng transaction; chưa phát hành vé nếu chưa có payment hợp lệ.
+  - Test concurrent/retry chứng minh một booking chỉ tạo đúng một ticket.
+  - Phụ thuộc: LAK-013, LAK-061.
 
 ## Giai đoạn 7 — Thanh toán sandbox và xử lý đến trễ
 
@@ -203,13 +216,15 @@
 
 - [ ] **LAK-071 · P0 — Webhook bảo mật và idempotent**
   - Xác minh chữ ký, provider event ID, transaction ID, booking, amount và currency.
-  - Lock booking/payment/ghế; trong hard deadline chuyển payment `SUCCESS`, booking `PAID`, ghế `SOLD` và ghi event trong một transaction.
+  - Lock booking/payment/ghế; trong hard deadline chuyển payment `SUCCESS`, booking `PAID`, ghế `SOLD`, phát hành ticket qua application interface và ghi event trong một transaction.
   - Unique constraint bảo vệ một payment success cho booking; test webhook lặp, sai chữ ký, sai tiền và đến không đúng thứ tự.
-  - Phụ thuộc: LAK-070.
+  - Phụ thuộc: LAK-064, LAK-070.
 
 - [ ] **LAK-072 · P0 — Payment deadline, reconciliation và late payment**
-  - Expire booking/payment đúng hạn; chấp nhận trong grace period nếu ghế vẫn thuộc booking.
-  - Sau hard deadline: `PAYMENT_REVIEW`, tuyệt đối không phát vé và ghi sự kiện bồi hoàn; job đối soát payment pending/mất webhook idempotent.
+  - Khi hết hard deadline mà chưa ghi nhận tiền: booking `PENDING_PAYMENT` → `EXPIRED`, giải phóng ghế an toàn; không chuyển sang review chỉ vì hết hạn.
+  - Chấp nhận payment trong grace period nếu ghế vẫn thuộc booking.
+  - Chỉ khi payment đã xác minh đến sau hard deadline: payment vẫn ghi `SUCCESS`, booking `EXPIRED` → `PAYMENT_REVIEW`, tuyệt đối không phát vé và ghi sự kiện bồi hoàn.
+  - Job đối soát payment pending/mất webhook phải idempotent và tuân thủ cùng state transition.
   - Phụ thuộc: LAK-071.
 
 - [ ] **LAK-073 · P0 — Frontend chuyển hướng và xác nhận trạng thái thanh toán**
@@ -225,10 +240,10 @@
 
 ## Giai đoạn 8 — Vé QR, email và soát vé
 
-- [ ] **LAK-080 · P0 — Phát hành vé đúng một lần**
-  - Migration/domain cho `tickets`; một ticket cho booking, token ngẫu nhiên mạnh và chỉ lưu `qr_token_hash`.
-  - Phát hành sau payment hợp lệ, idempotent trong transaction; API lấy vé theo code có authorization.
-  - Phụ thuộc: LAK-013, LAK-071, LAK-074.
+- [ ] **LAK-080 · P0 — API truy xuất vé và kiểm chứng phát hành**
+  - API lấy vé theo code có authorization; chỉ chủ booking hoặc vai trò/phạm vi hợp lệ được truy cập.
+  - Bổ sung integration test kiểm chứng payment hợp lệ tạo đúng một ticket trong cùng transaction và late payment không tạo ticket.
+  - Phụ thuộc: LAK-064, LAK-071.
 
 - [ ] **LAK-081 · P0 — Trang Vé của tôi và lịch sử booking**
   - `GET /api/me/bookings`, chi tiết booking/vé; UI lịch sử và vé QR theo trạng thái thực từ backend.
@@ -248,11 +263,17 @@
 
 ## Giai đoạn 9 — Refund và vận hành quản trị
 
+- [ ] **LAK-089 · P1 — Hủy suất và bồi hoàn booking an toàn**
+  - Hủy/đóng bán suất theo cinema scope, ngăn giao dịch mới và xử lý các booking bị ảnh hưởng bằng workflow idempotent.
+  - Booking đã thanh toán được hoàn 100% không phụ thuộc hạn 45 phút; hủy ticket, xử lý voucher theo chính sách đã chốt, ghi outbox và audit.
+  - Retry/partial failure không được bỏ sót booking hoặc tạo refund trùng; có trạng thái manual review khi provider refund lỗi.
+  - Phụ thuộc: LAK-044, LAK-063, LAK-074, LAK-080.
+
 - [ ] **LAK-090 · P1 — Khách yêu cầu refund toàn bộ booking**
-  - API idempotent chỉ hoàn toàn bộ và kiểm tra hạn 45 phút, vé chưa dùng, chưa từng hoàn.
-  - Hủy suất được hoàn 100%; khôi phục voucher còn hạn; refund lỗi chuyển manual review.
+  - API idempotent chỉ hoàn toàn bộ, hoàn 100% và kiểm tra hạn 45 phút, vé chưa dùng, chưa từng hoàn.
+  - Khôi phục voucher còn hạn; refund lỗi chuyển manual review.
   - Lock payment/booking/ticket/ghế phù hợp; ticket chuyển `CANCELLED` và audit đầy đủ.
-  - Phụ thuộc: LAK-074, LAK-080, LAK-083.
+  - Phụ thuộc: LAK-063, LAK-074, LAK-080, LAK-083.
 
 - [ ] **LAK-091 · P1 — Frontend yêu cầu và theo dõi refund**
   - Hiển thị điều kiện, xác nhận tác vụ, trạng thái pending/refunded/failed và lý do từ chối an toàn.
@@ -261,7 +282,7 @@
 - [ ] **LAK-092 · P1 — Admin quản lý booking/payment/refund/user**
   - Tìm kiếm, lọc, xem chi tiết và thao tác được phép theo role/cinema scope; không cho sửa trực tiếp dữ liệu giao dịch.
   - Audit khóa/mở user, hủy suất, đổi giá và xử lý refund.
-  - Phụ thuộc: LAK-022, LAK-033, LAK-090.
+  - Phụ thuộc: LAK-022, LAK-033, LAK-089, LAK-090.
 
 - [ ] **LAK-093 · P1 — Dashboard và báo cáo cơ bản**
   - Doanh thu, số booking/vé và tỷ lệ lấp đầy theo thời gian/phim/rạp; query/index phù hợp và timezone đúng.
@@ -277,8 +298,8 @@
 
 - [ ] **LAK-101 · P0 — End-to-end test luồng doanh thu**
   - Tự động hóa: đăng nhập → chọn phim/rạp/suất → giữ ghế → checkout → webhook → nhận vé → quét vé.
-  - Bao phủ conflict ghế, hết hold, refresh/retry, payment trễ, refund và Redis/WebSocket lỗi.
-  - Phụ thuộc: LAK-090, LAK-093.
+  - Bao phủ conflict ghế, hết hold, refresh/retry, payment trễ, refund, hủy suất và Redis/WebSocket lỗi.
+  - Phụ thuộc: LAK-089, LAK-090, LAK-093.
 
 - [ ] **LAK-102 · P1 — Docker hóa ứng dụng và môi trường triển khai**
   - Image frontend/backend non-root, Compose đầy đủ, health/readiness, migration strategy và cấu hình environment.

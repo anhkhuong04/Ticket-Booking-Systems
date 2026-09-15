@@ -441,6 +441,7 @@ erDiagram
 |---|---|
 | `GET` | `/api/movies` |
 | `GET` | `/api/movies/{id}` |
+| `GET` | `/api/genres` |
 | `GET` | `/api/cinemas` |
 | `GET` | `/api/showtimes` |
 | `GET` | `/api/showtimes/{id}/seats` |
@@ -477,6 +478,7 @@ erDiagram
 
 - CRUD phim, thể loại và media.
 - CRUD chi nhánh, phòng và ghế.
+- `GET /api/admin/cinemas/{id}` và `GET /api/staff/cinemas/{id}` chỉ cho người có role phù hợp, cùng `SUPER_ADMIN` hoặc nhân sự được gán chi nhánh; mọi thao tác staff/manager theo chi nhánh phải áp cùng cinema scope tại backend.
 - CRUD suất chiếu và bảng giá.
 - Quản lý booking, payment, refund và voucher.
 - Quản lý người dùng và nhân viên.

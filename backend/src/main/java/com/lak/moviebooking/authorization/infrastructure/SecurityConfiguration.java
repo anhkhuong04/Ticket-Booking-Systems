@@ -58,6 +58,7 @@ class SecurityConfiguration {
                         .permitAll()
                         .requestMatchers("/api/auth/session").authenticated()
                         .requestMatchers("/api/auth/refresh", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/movies/**", "/api/cinemas/**", "/api/genres").permitAll()
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "CINEMA_MANAGER")
                         .requestMatchers("/api/staff/**").hasAnyRole("SUPER_ADMIN", "TICKET_STAFF")
                         .requestMatchers("/api/me/**", "/api/seat-holds/**", "/api/bookings/**")

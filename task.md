@@ -99,21 +99,21 @@
 
 ## Giai đoạn 3 — Dữ liệu nền: phim, rạp, phòng và ghế
 
-- [ ] **LAK-030 · P0 — Catalog backend và API đọc công khai**
+- [x] **LAK-030 · P0 — Catalog backend và API đọc công khai**
   - Migration/domain cho `movies`, `genres`, `movie_genres`; API danh sách, tìm kiếm/lọc và chi tiết phim.
   - Validate thời lượng, trạng thái phát hành; cache chỉ là tối ưu và phải có chiến lược invalidation.
   - Phụ thuộc: LAK-010, LAK-012.
 
-- [ ] **LAK-031 · P0 — Cinema, auditorium và seat layout backend**
+- [x] **LAK-031 · P0 — Cinema, auditorium và seat layout backend**
   - Migration/domain cho `cinemas`, `auditoriums`, `seats`; hỗ trợ ghế thường, VIP, ghế đôi và trạng thái khóa.
   - Ràng buộc vị trí ghế duy nhất; ghế đôi có đúng hai ghế cùng `pair_key`.
   - Phụ thuộc: LAK-010, LAK-012.
 
-- [ ] **LAK-032 · P0 — Frontend khám phá phim và rạp**
+- [x] **LAK-032 · P0 — Frontend khám phá phim và rạp**
   - Trang phim đang/sắp chiếu, tìm kiếm/lọc bằng URL state, chi tiết phim và danh sách rạp.
   - Phụ thuộc: LAK-030, LAK-031.
 
-- [ ] **LAK-033 · P0 — Phân quyền theo phạm vi chi nhánh**
+- [x] **LAK-033 · P0 — Phân quyền theo phạm vi chi nhánh**
   - Migration `staff_cinema_assignments`; enforce cinema scope tại backend cho staff và manager.
   - Hoàn tất khi integration test chứng minh không truy cập chéo chi nhánh.
   - Phụ thuộc: LAK-022, LAK-031.

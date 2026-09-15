@@ -13,6 +13,10 @@ public final class ApplicationException extends RuntimeException {
 		this.code = requireCode(code);
 	}
 
+	public static ApplicationException notFound(String code, String safeMessage) {
+		return new ApplicationException(ApplicationErrorType.NOT_FOUND, code, safeMessage);
+	}
+
 	public static ApplicationException unauthenticated(String code, String safeMessage) {
 		return new ApplicationException(ApplicationErrorType.UNAUTHENTICATED, code, safeMessage);
 	}

@@ -107,6 +107,7 @@ public class GlobalApiExceptionHandler {
 
 	private HttpStatus statusFor(ApplicationErrorType type) {
 		return switch (type) {
+			case NOT_FOUND -> HttpStatus.NOT_FOUND;
 			case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
 			case FORBIDDEN -> HttpStatus.FORBIDDEN;
 			case CONFLICT -> HttpStatus.CONFLICT;

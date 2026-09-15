@@ -149,6 +149,40 @@ class JdbcShowtimeSeatInventory implements ShowtimeSeatInventory {
         }
     }
 
+    @Override
+    public List<UUID> markSoldForBooking(UUID bookingId, Instant now) {
+        List<UUID> seatIds = bookingSeatIds(bookingId);
+        if (seatIds.isEmpty()) {
+            throw ApplicationException.conflict("BOOKING_SEATS_UNAVAILABLE", "Booking seats are no longer available");
+        }
+        int updated = jdbcTemplate.update("""
+                UPDATE showtime_seats SET status='SOLD',version=version+1,updated_at=?
+                WHERE current_booking_id=? AND status='PAYMENT_PENDING'
+                """, atUtc(now), bookingId);
+        if (updated != seatIds.size()) {
+            throw ApplicationException.conflict("BOOKING_SEATS_UNAVAILABLE", "Booking seats are no longer available");
+        }
+        return seatIds;
+    }
+
+    @Override
+    public List<UUID> releaseBooking(UUID bookingId, Instant now) {
+        List<UUID> seatIds = bookingSeatIds(bookingId);
+        if (seatIds.isEmpty()) return List.of();
+        jdbcTemplate.update("""
+                UPDATE showtime_seats SET status='AVAILABLE',current_booking_id=NULL,version=version+1,updated_at=?
+                WHERE current_booking_id=? AND status='PAYMENT_PENDING'
+                """, atUtc(now), bookingId);
+        return seatIds;
+    }
+
+    private List<UUID> bookingSeatIds(UUID bookingId) {
+        return jdbcTemplate.query("""
+                SELECT id FROM showtime_seats WHERE current_booking_id=? AND status='PAYMENT_PENDING'
+                ORDER BY id FOR UPDATE
+                """, (resultSet, rowNumber) -> resultSet.getObject("id", UUID.class), bookingId);
+    }
+
     private boolean isOpen(UUID showtimeId, Instant now) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject("""
                 SELECT EXISTS (

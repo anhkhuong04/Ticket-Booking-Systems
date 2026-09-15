@@ -15,6 +15,8 @@ import com.lak.moviebooking.booking.application.BookingCheckout;
 import com.lak.moviebooking.booking.application.BookingCheckoutCommand;
 import com.lak.moviebooking.booking.application.BookingItemView;
 import com.lak.moviebooking.booking.application.BookingView;
+import com.lak.moviebooking.booking.application.BookingPaymentAccess;
+import com.lak.moviebooking.booking.application.PaymentBooking;
 import com.lak.moviebooking.common.application.error.ApplicationException;
 import com.lak.moviebooking.common.outbox.application.NewOutboxEvent;
 import com.lak.moviebooking.common.outbox.application.OutboxEventWriter;
@@ -30,7 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class JdbcBookingCheckout implements BookingCheckout {
+class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess {
 
     private static final String ACTIVE_HOLD = "ACTIVE";
     private static final String PENDING_PAYMENT = "PENDING_PAYMENT";
@@ -113,6 +115,52 @@ class JdbcBookingCheckout implements BookingCheckout {
             throw ApplicationException.forbidden("BOOKING_FORBIDDEN", "You do not have access to this booking");
         }
         return view(booking, clock.instant());
+    }
+
+    @Override
+    public PaymentBooking lockForPayment(UUID bookingId, Instant now) {
+        return jdbcTemplate.query("""
+                SELECT id,user_id,booking_code,status,total_amount,hard_deadline
+                FROM bookings WHERE id=? FOR UPDATE
+                """, (resultSet, rowNumber) -> new PaymentBooking(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("user_id", UUID.class),
+                resultSet.getString("booking_code"), resultSet.getString("status"), resultSet.getLong("total_amount"),
+                instant(resultSet, "hard_deadline")), bookingId).stream().findFirst()
+                .orElseThrow(() -> ApplicationException.notFound("BOOKING_NOT_FOUND", "Booking was not found"));
+    }
+
+    @Override
+    public PaymentBooking lockForPayment(String bookingCode, UUID userId, Instant now) {
+        PaymentBooking booking = jdbcTemplate.query("""
+                SELECT id,user_id,booking_code,status,total_amount,hard_deadline
+                FROM bookings WHERE booking_code=? FOR UPDATE
+                """, (resultSet, rowNumber) -> new PaymentBooking(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("user_id", UUID.class),
+                resultSet.getString("booking_code"), resultSet.getString("status"), resultSet.getLong("total_amount"),
+                instant(resultSet, "hard_deadline")), bookingCode.trim()).stream().findFirst()
+                .orElseThrow(() -> ApplicationException.notFound("BOOKING_NOT_FOUND", "Booking was not found"));
+        if (!booking.userId().equals(userId)) {
+            throw ApplicationException.forbidden("BOOKING_FORBIDDEN", "You do not have access to this booking");
+        }
+        return booking;
+    }
+
+    @Override
+    public void markPaid(UUID bookingId, Instant now) {
+        jdbcTemplate.update("UPDATE bookings SET status='PAID',updated_at=? WHERE id=? AND status='PENDING_PAYMENT'",
+                atUtc(now), bookingId);
+    }
+
+    @Override
+    public void markExpired(UUID bookingId, Instant now) {
+        jdbcTemplate.update("UPDATE bookings SET status='EXPIRED',updated_at=? WHERE id=? AND status='PENDING_PAYMENT'",
+                atUtc(now), bookingId);
+    }
+
+    @Override
+    public void markPaymentReview(UUID bookingId, Instant now) {
+        jdbcTemplate.update("UPDATE bookings SET status='PAYMENT_REVIEW',updated_at=? WHERE id=? AND status='EXPIRED'",
+                atUtc(now), bookingId);
     }
 
     private UUID claimIdempotency(UUID userId, BookingCheckoutCommand command, Instant now) {

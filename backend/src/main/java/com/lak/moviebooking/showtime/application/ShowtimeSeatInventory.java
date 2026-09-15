@@ -17,4 +17,8 @@ public interface ShowtimeSeatInventory {
             UUID showtimeId, List<UUID> showtimeSeatIds, UUID holdId, Instant now);
 
     void markPaymentPending(List<UUID> showtimeSeatIds, UUID holdId, UUID bookingId, Instant now);
+
+    List<UUID> markSoldForBooking(UUID bookingId, Instant now);
+
+    List<UUID> releaseBooking(UUID bookingId, Instant now);
 }

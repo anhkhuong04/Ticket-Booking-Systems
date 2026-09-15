@@ -477,6 +477,7 @@ its snapped prices/seats.
 
 | Method | Endpoint |
 |---|---|
+| `POST` | `/api/payments` |
 | `POST` | `/api/payments/{provider}/webhook` |
 | `GET` | `/api/payments/{id}/status` |
 | `POST` | `/api/bookings/{id}/refunds` |
@@ -514,6 +515,10 @@ its snapped prices/seats.
 | `429` | Vượt giới hạn request |
 
 API giữ ghế, checkout, refund và webhook phải hỗ trợ idempotency.
+
+`POST /api/payments` yêu cầu access token `CUSTOMER`, body `bookingCode`, `provider`. Backend kiểm tra chủ booking,
+số tiền VND và hard deadline rồi tạo/replay payment `INITIATED`; URL thanh toán do provider adapter trả về. Webhook công khai
+chỉ chấp nhận raw payload có chữ ký hợp lệ; redirect URL không được xác nhận thanh toán.
 
 `POST /api/seat-holds` yêu cầu access token của `CUSTOMER`, header `Idempotency-Key` và body
 `showtimeId`, `showtimeSeatIds`. Response trả ID hold, danh sách snapshot seat ID,

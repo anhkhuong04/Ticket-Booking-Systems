@@ -39,3 +39,11 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  outbox:
+    enabled: ${OUTBOX_ENABLED:true}
+    batch-size: ${OUTBOX_BATCH_SIZE:50}
+    poll-interval: ${OUTBOX_POLL_INTERVAL:1s}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:8}
+    initial-backoff: ${OUTBOX_INITIAL_BACKOFF:5s}
+    max-backoff: ${OUTBOX_MAX_BACKOFF:15m}
+    processing-timeout: ${OUTBOX_PROCESSING_TIMEOUT:2m}

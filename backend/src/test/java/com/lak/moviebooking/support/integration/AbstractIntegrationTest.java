@@ -5,28 +5,28 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers
 public abstract class AbstractIntegrationTest {
 
 	private static final String REDIS_PASSWORD = "integration-test-password";
-	@Container
 	private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
 			DockerImageName.parse("postgres:17-alpine"))
 			.withDatabaseName("lak_test")
 			.withUsername("lak_test")
 			.withPassword("lak_test_password");
-	@Container
 	private static final GenericContainer<?> REDIS = new GenericContainer<>(
 			DockerImageName.parse("redis:7-alpine"))
 			.withCommand("redis-server", "--requirepass", REDIS_PASSWORD)
 			.withExposedPorts(6379);
+
+	static {
+		POSTGRES.start();
+		REDIS.start();
+	}
 
 	@DynamicPropertySource
 	static void registerContainerProperties(DynamicPropertyRegistry registry) {

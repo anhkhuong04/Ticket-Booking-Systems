@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-013 — Transactional outbox nền tảng`.
+**Task tiếp theo:** `LAK-014 — Observability và cấu hình vận hành cơ bản`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -54,7 +54,7 @@
   - Kiểm tra Flyway từ database rỗng; tách unit, integration và concurrency test để CI chạy ổn định.
   - Hoàn tất khi CI chứng minh migration và test tích hợp chạy lặp lại được.
 
-- [ ] **LAK-013 · P0 — Transactional outbox nền tảng**
+- [x] **LAK-013 · P0 — Transactional outbox nền tảng**
   - Migration/repository/job cho `outbox_events`; ghi event cùng transaction nghiệp vụ, publish/retry idempotent.
   - Dùng cho email và WebSocket; theo dõi retry và dead-letter/manual review.
   - Phụ thuộc: LAK-010, LAK-012.

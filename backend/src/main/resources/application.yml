@@ -1,6 +1,8 @@
 spring:
   application:
     name: lak-backend
+  profiles:
+    default: local
   config:
     import:
       - optional:file:../.env[.properties]
@@ -28,13 +30,22 @@ server:
   port: ${BACKEND_PORT:8080}
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: never
+
+logging:
+  pattern:
+    console: "timestamp=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level logger=%logger{36} request_id=%X{request_id:-} booking_code=%X{booking_code:-} payment_id=%X{payment_id:-} message=%msg%n"
+  level:
+    root: ${LOG_LEVEL:INFO}
 
 app:
   cors:

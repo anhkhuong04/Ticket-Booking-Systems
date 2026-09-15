@@ -6,6 +6,10 @@ spring:
     hibernate:
       ddl-auto: validate
 
+logging:
+  level:
+    root: WARN
+
 app:
   outbox:
     enabled: false

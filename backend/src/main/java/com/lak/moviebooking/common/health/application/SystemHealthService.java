@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.lak.moviebooking.common.observability.DependencyHealthMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -21,14 +22,17 @@ public class SystemHealthService implements SystemHealthQuery {
 	private final JdbcTemplate jdbcTemplate;
 	private final RedisConnectionFactory redisConnectionFactory;
 	private final Clock clock;
+	private final DependencyHealthMetrics healthMetrics;
 
 	public SystemHealthService(
 			JdbcTemplate jdbcTemplate,
 			RedisConnectionFactory redisConnectionFactory,
-			Clock clock) {
+			Clock clock,
+			DependencyHealthMetrics healthMetrics) {
 		this.jdbcTemplate = jdbcTemplate;
 		this.redisConnectionFactory = redisConnectionFactory;
 		this.clock = clock;
+		this.healthMetrics = healthMetrics;
 	}
 
 	@Override
@@ -48,20 +52,26 @@ public class SystemHealthService implements SystemHealthQuery {
 	private ServiceHealth checkDatabase() {
 		try {
 			Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-			return Integer.valueOf(1).equals(result) ? ServiceHealth.up() : ServiceHealth.down();
+			boolean healthy = Integer.valueOf(1).equals(result);
+			healthMetrics.record("postgresql", healthy);
+			return healthy ? ServiceHealth.up() : ServiceHealth.down();
 		} catch (RuntimeException exception) {
-			LOGGER.warn("Database health check failed: {}", exception.getClass().getSimpleName());
+			healthMetrics.record("postgresql", false);
+			LOGGER.warn("Dependency health check failed dependency=postgresql exception_type={}",
+					exception.getClass().getSimpleName());
 			return ServiceHealth.down();
 		}
 	}
 
 	private ServiceHealth checkRedis() {
 		try (RedisConnection connection = redisConnectionFactory.getConnection()) {
-			return "PONG".equalsIgnoreCase(connection.ping())
-					? ServiceHealth.up()
-					: ServiceHealth.down();
+			boolean healthy = "PONG".equalsIgnoreCase(connection.ping());
+			healthMetrics.record("redis", healthy);
+			return healthy ? ServiceHealth.up() : ServiceHealth.down();
 		} catch (RuntimeException exception) {
-			LOGGER.warn("Redis health check failed: {}", exception.getClass().getSimpleName());
+			healthMetrics.record("redis", false);
+			LOGGER.warn("Dependency health check failed dependency=redis exception_type={}",
+					exception.getClass().getSimpleName());
 			return ServiceHealth.down();
 		}
 	}

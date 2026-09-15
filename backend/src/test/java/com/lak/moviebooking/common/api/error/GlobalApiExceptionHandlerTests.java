@@ -1,6 +1,7 @@
 package com.lak.moviebooking.common.api.error;
 
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -14,10 +15,14 @@ import java.util.stream.Stream;
 
 import com.lak.moviebooking.common.api.request.RequestIdFilter;
 import com.lak.moviebooking.common.application.error.ApplicationException;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -86,10 +91,26 @@ class GlobalApiExceptionHandlerTests {
 
 	@Test
 	void hidesUnexpectedExceptionDetails() throws Exception {
-		mockMvc.perform(get("/test/errors/unexpected"))
-				.andExpect(status().isInternalServerError())
-				.andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
-				.andExpect(jsonPath("$.message").value("An unexpected error occurred"));
+		String secret = "token=super-secret-value";
+		Logger logger = (Logger) LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
+		ListAppender<ILoggingEvent> appender = new ListAppender<>();
+		appender.start();
+		logger.addAppender(appender);
+
+		try {
+			mockMvc.perform(get("/test/errors/unexpected"))
+					.andExpect(status().isInternalServerError())
+					.andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+					.andExpect(jsonPath("$.message").value("An unexpected error occurred"));
+		}
+		finally {
+			logger.detachAppender(appender);
+			appender.stop();
+		}
+
+		assertThat(appender.list)
+				.extracting(ILoggingEvent::getFormattedMessage)
+				.noneMatch(message -> message.contains(secret));
 	}
 
 	private static Stream<Arguments> applicationErrors() {
@@ -116,7 +137,7 @@ class GlobalApiExceptionHandlerTests {
 				case "business" -> ApplicationException.businessRule(
 						"BUSINESS_RULE_VIOLATION", "Business rule rejected the request");
 				case "rate-limited" -> ApplicationException.rateLimited("RATE_LIMITED", "Too many requests");
-				case "unexpected" -> new IllegalStateException("sensitive database detail");
+				case "unexpected" -> new IllegalStateException("sensitive database detail token=super-secret-value");
 				default -> new IllegalArgumentException("Unknown test error type");
 			};
 		}

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 
+import com.lak.moviebooking.common.health.application.SystemHealthQuery;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,12 @@ class InfrastructureSmokeIT extends AbstractIntegrationTest {
 
 	@Autowired
 	private StringRedisTemplate redisTemplate;
+
+	@Autowired
+	private SystemHealthQuery systemHealthQuery;
+
+	@Autowired
+	private MeterRegistry meterRegistry;
 
 	@Test
 	@Sql("/fixtures/minimal.sql")
@@ -45,5 +54,23 @@ class InfrastructureSmokeIT extends AbstractIntegrationTest {
 		assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("ready");
 
 		redisTemplate.delete(key);
+	}
+
+	@Test
+	void recordsDependencyHealthMetrics() {
+		double databaseChecksBefore = healthCheckCount("postgresql");
+		double redisChecksBefore = healthCheckCount("redis");
+
+		assertThat(systemHealthQuery.check().status()).isEqualTo("UP");
+
+		assertThat(healthCheckCount("postgresql")).isEqualTo(databaseChecksBefore + 1);
+		assertThat(healthCheckCount("redis")).isEqualTo(redisChecksBefore + 1);
+	}
+
+	private double healthCheckCount(String dependency) {
+		Counter counter = meterRegistry.find("lak.dependency.health.checks")
+				.tags("dependency", dependency, "status", "up")
+				.counter();
+		return counter == null ? 0 : counter.count();
 	}
 }

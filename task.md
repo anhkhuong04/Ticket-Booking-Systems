@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-014 — Observability và cấu hình vận hành cơ bản`.
+**Task tiếp theo:** `LAK-015 — Notification và email adapter nền tảng`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -59,7 +59,7 @@
   - Dùng cho email và WebSocket; theo dõi retry và dead-letter/manual review.
   - Phụ thuộc: LAK-010, LAK-012.
 
-- [ ] **LAK-014 · P1 — Observability và cấu hình vận hành cơ bản**
+- [x] **LAK-014 · P1 — Observability và cấu hình vận hành cơ bản**
   - Structured logging với `request_id`, `booking_code`, `payment_id`; metrics/health cho dependency quan trọng.
   - Chuẩn hóa secret qua environment, profile local/test/prod và chính sách log an toàn.
   - Hoàn tất khi có tài liệu cấu hình và test không ghi secret/token vào log.

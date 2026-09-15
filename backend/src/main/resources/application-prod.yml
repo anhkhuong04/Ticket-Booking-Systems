@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+server:
+  forward-headers-strategy: framework
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}

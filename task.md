@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-020 — Schema identity và bootstrap role`.
+**Task tiếp theo:** `LAK-021 — Đăng ký, đăng nhập, refresh và logout`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -71,7 +71,7 @@
 
 ## Giai đoạn 2 — Identity, session và phân quyền
 
-- [ ] **LAK-020 · P0 — Schema identity và bootstrap role**
+- [x] **LAK-020 · P0 — Schema identity và bootstrap role**
   - Migration cho `users`, `roles`, `user_roles`, `refresh_tokens`, `password_reset_tokens`.
   - Chuẩn hóa email/phone trước khi lưu; unique có điều kiện trên giá trị chuẩn hóa, hash token, trạng thái tài khoản và seed bốn role đã chốt.
   - Phụ thuộc: LAK-010, LAK-012.

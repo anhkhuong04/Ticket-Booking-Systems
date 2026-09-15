@@ -40,3 +40,7 @@ export async function getTicket(ticketCode: string): Promise<Ticket> {
   const response = await apiClient.get<Ticket>(`/api/tickets/${encodeURIComponent(ticketCode)}`)
   return response.data
 }
+
+export async function resendTicketEmail(ticketId: string): Promise<void> {
+  await apiClient.post(`/api/tickets/${encodeURIComponent(ticketId)}/resend-email`)
+}

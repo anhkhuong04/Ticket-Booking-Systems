@@ -8,8 +8,40 @@ public class EmailTemplateRenderer {
 	public EmailContent render(EmailOutboxPayload payload) {
 		return switch (payload.template()) {
 			case BOOKING_CONFIRMATION -> bookingConfirmation(payload);
+			case TICKET_ISSUED -> ticketIssued(payload);
 			case PASSWORD_RESET -> passwordReset(payload);
 		};
+	}
+
+	private EmailContent ticketIssued(EmailOutboxPayload payload) {
+		String ticketCode = requiredVariable(payload, "ticketCode");
+		String bookingCode = requiredVariable(payload, "bookingCode");
+		String movieTitle = requiredVariable(payload, "movieTitle");
+		String cinema = requiredVariable(payload, "cinema");
+		String auditorium = requiredVariable(payload, "auditorium");
+		String showtime = requiredVariable(payload, "showtime");
+		String seats = requiredVariable(payload, "seats");
+		return new EmailContent(
+				"Vé điện tử LAK " + ticketCode,
+				"""
+					<html><body>
+					<p>Vé điện tử của bạn đã sẵn sàng.</p>
+					<p>Mã vé: <strong>%s</strong></p>
+					<p>Mã đặt vé: %s</p>
+					<p>Phim: %s</p>
+					<p>Rạp: %s · %s</p>
+					<p>Suất chiếu: %s</p>
+					<p>Ghế: %s</p>
+					<p>Vui lòng mở Vé của tôi trong ứng dụng để hiển thị mã QR tại rạp.</p>
+					</body></html>
+					""".formatted(
+						escapeHtml(ticketCode),
+						escapeHtml(bookingCode),
+						escapeHtml(movieTitle),
+						escapeHtml(cinema),
+						escapeHtml(auditorium),
+						escapeHtml(showtime),
+						escapeHtml(seats)));
 	}
 
 	private EmailContent passwordReset(EmailOutboxPayload payload) {

@@ -13,6 +13,7 @@ import java.util.UUID;
 import com.lak.moviebooking.common.application.error.ApplicationException;
 import com.lak.moviebooking.ticketing.application.TicketIssuance;
 import com.lak.moviebooking.ticketing.application.TicketIssuer;
+import com.lak.moviebooking.ticketing.application.TicketEmailDelivery;
 import com.lak.moviebooking.ticketing.application.TicketQrPayloadFactory;
 import com.lak.moviebooking.ticketing.application.TicketView;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,11 +26,14 @@ class JdbcTicketIssuer implements TicketIssuer {
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
     private final TicketQrPayloadFactory qrPayloadFactory;
+    private final TicketEmailDelivery ticketEmailDelivery;
 
-    JdbcTicketIssuer(JdbcTemplate jdbcTemplate, Clock clock, TicketQrPayloadFactory qrPayloadFactory) {
+    JdbcTicketIssuer(JdbcTemplate jdbcTemplate, Clock clock, TicketQrPayloadFactory qrPayloadFactory,
+            TicketEmailDelivery ticketEmailDelivery) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
         this.qrPayloadFactory = qrPayloadFactory;
+        this.ticketEmailDelivery = ticketEmailDelivery;
     }
 
     @Override
@@ -54,6 +58,7 @@ class JdbcTicketIssuer implements TicketIssuer {
                 VALUES (?,?,?,?,?,?,NULL,?,?)
                 """, ticket.id(), ticket.bookingId(), ticket.ticketCode(), sha256(rawQrToken), ticket.status(),
                 atUtc(ticket.issuedAt()), atUtc(now), atUtc(now));
+        ticketEmailDelivery.enqueueIssuedTicket(ticket.id());
         return new TicketIssuance(ticket, Optional.of(rawQrToken));
     }
 

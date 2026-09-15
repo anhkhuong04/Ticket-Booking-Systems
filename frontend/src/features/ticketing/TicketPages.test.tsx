@@ -1,14 +1,15 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MyTicketsPage, TicketDetailPage } from './TicketPages'
-import { getMyBookings, getTicket } from './ticketApi'
+import { getMyBookings, getTicket, resendTicketEmail } from './ticketApi'
 
-vi.mock('./ticketApi', () => ({ getMyBookings: vi.fn(), getTicket: vi.fn() }))
+vi.mock('./ticketApi', () => ({ getMyBookings: vi.fn(), getTicket: vi.fn(), resendTicketEmail: vi.fn() }))
 vi.mock('qrcode', () => ({ toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,qr') }))
 
 const mockedGetMyBookings = vi.mocked(getMyBookings)
 const mockedGetTicket = vi.mocked(getTicket)
+const mockedResendTicketEmail = vi.mocked(resendTicketEmail)
 
 const historyItem = {
   bookingId: 'booking-1',
@@ -43,6 +44,7 @@ describe('ticket pages', () => {
     window.sessionStorage.clear()
     mockedGetMyBookings.mockReset()
     mockedGetTicket.mockReset()
+    mockedResendTicketEmail.mockReset()
   })
 
   it('shows booking history from the authenticated customer endpoint without a QR image', async () => {
@@ -68,6 +70,9 @@ describe('ticket pages', () => {
 
     expect(await screen.findByRole('img', { name: 'Mã QR vé TKT-123' })).toBeInTheDocument()
     await waitFor(() => expect(mockedGetTicket).toHaveBeenCalledWith('TKT-123'))
+    mockedResendTicketEmail.mockResolvedValue()
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi lại email vé' }))
+    await waitFor(() => expect(mockedResendTicketEmail).toHaveBeenCalledWith('ticket-1'))
     expect(window.sessionStorage.length).toBe(0)
     expect(window.localStorage.length).toBe(0)
   })

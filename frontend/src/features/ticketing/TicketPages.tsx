@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios'
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { toDataURL } from 'qrcode'
-import { getMyBookings, getTicket, type BookingHistoryItem, type Ticket } from './ticketApi'
+import { getMyBookings, getTicket, resendTicketEmail, type BookingHistoryItem, type Ticket } from './ticketApi'
 
 type LoadState<T> = { kind: 'loading' } | { kind: 'loaded'; data: T } | { kind: 'error'; message: string }
 type TicketTab = 'upcoming' | 'past' | 'closed'
@@ -146,6 +146,7 @@ export function TicketDetailPage() {
   const { ticketCode = '' } = useParams()
   const [state, setState] = useState<LoadState<Ticket>>({ kind: 'loading' })
   const [retry, setRetry] = useState(0)
+  const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
     let active = true
@@ -164,6 +165,13 @@ export function TicketDetailPage() {
   }
 
   const ticket = state.data
+  const resendEmail = () => {
+    setEmailState('sending')
+    void resendTicketEmail(ticket.id).then(
+      () => setEmailState('sent'),
+      () => setEmailState('error'),
+    )
+  }
   return (
     <main className="min-h-screen bg-background py-8 sm:py-12">
       <section className="mx-auto max-w-lg px-4 sm:px-6">
@@ -179,6 +187,14 @@ export function TicketDetailPage() {
             ? <TicketQr key={ticket.ticketCode} payload={ticket.qrPayload} ticketCode={ticket.ticketCode} />
             : <p className="mt-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-900">Mã QR chỉ hiển thị cho đúng chủ tài khoản đặt vé.</p>}
           <p className="mt-4 font-mono text-xs text-text-secondary">{ticket.ticketCode}</p>
+          {ticket.qrPayload && (
+            <div className="mt-5">
+              <button disabled={emailState === 'sending' || emailState === 'sent'} onClick={resendEmail} className="min-h-11 rounded-lg border border-primary px-4 text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60">
+                {emailState === 'sending' ? 'Đang gửi…' : emailState === 'sent' ? 'Đã gửi lại email' : 'Gửi lại email vé'}
+              </button>
+              {emailState === 'error' && <p role="alert" className="mt-2 text-sm text-error">Không thể gửi email lúc này. Vui lòng thử lại sau.</p>}
+            </div>
+          )}
         </article>
       </section>
     </main>

@@ -12,6 +12,7 @@ import { SeatSelectionPage } from './features/reservation/SeatSelectionPage'
 import { CheckoutPage } from './features/booking/CheckoutPage'
 import { PaymentResultPage } from './features/payment/PaymentResultPage'
 import { MyTicketsPage, TicketDetailPage } from './features/ticketing/TicketPages'
+import { StaffScannerPage } from './features/ticketing/StaffScannerPage'
 
 function AccountPage() {
   const { user, logout } = useAuth()
@@ -57,6 +58,7 @@ function App() {
         <Route path="/admin/pricing" element={<AdminPricingPage />} />
       </Route>
     </Route>
+    <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff/scanner" element={<StaffScannerPage />} /></Route>
     <Route path="/forbidden" element={<ForbiddenPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes></AuthProvider>

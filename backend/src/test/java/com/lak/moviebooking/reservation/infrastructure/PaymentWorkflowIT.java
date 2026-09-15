@@ -67,6 +67,11 @@ class PaymentWorkflowIT extends SeatHoldManagementIT {
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM bookings WHERE id=?", String.class, booking.id())).isEqualTo("PAID");
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM showtime_seats WHERE id=?", String.class, fixture.standardSeatId())).isEqualTo("SOLD");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, booking.id())).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("""
+                SELECT count(*) FROM outbox_events event
+                JOIN tickets ticket ON ticket.id=event.aggregate_id
+                WHERE event.event_type='notification.email.requested' AND ticket.booking_id=?
+                """, Integer.class, booking.id())).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM payment_events WHERE payment_id=?", Integer.class, created.id())).isEqualTo(1);
     }
 
@@ -101,6 +106,8 @@ class PaymentWorkflowIT extends SeatHoldManagementIT {
         BookingView booking = booking(fixture, "payment-ticket-failure");
         PaymentView payment = payments.create(fixture.firstUserId(), new PaymentCreateCommand(booking.bookingCode(), "sandbox"));
         String raw = payload(payment.id(), "evt-ticket-failure-" + UUID.randomUUID(), transaction(payment.id()), 90_000L, Instant.now());
+        int emailRequestsBefore = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM outbox_events WHERE event_type='notification.email.requested'", Integer.class);
         jdbcTemplate.execute("""
                 CREATE FUNCTION reject_ticket_issuance() RETURNS trigger LANGUAGE plpgsql AS $$
                 BEGIN RAISE EXCEPTION 'simulated ticket issuance failure'; END;
@@ -125,6 +132,8 @@ class PaymentWorkflowIT extends SeatHoldManagementIT {
         assertThat(jdbcTemplate.queryForObject("SELECT status FROM showtime_seats WHERE id=?", String.class, fixture.standardSeatId())).isEqualTo("PAYMENT_PENDING");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, booking.id())).isZero();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM payment_events WHERE payment_id=?", Integer.class, payment.id())).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM outbox_events WHERE event_type='notification.email.requested'", Integer.class))
+                .isEqualTo(emailRequestsBefore);
     }
 
     private BookingView booking(Fixture fixture, String key) {

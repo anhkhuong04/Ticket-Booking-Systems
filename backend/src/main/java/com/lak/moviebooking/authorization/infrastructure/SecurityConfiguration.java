@@ -18,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 class SecurityConfiguration {
@@ -63,6 +64,7 @@ class SecurityConfiguration {
                         .requestMatchers("/api/showtimes/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "CINEMA_MANAGER")
                         .requestMatchers("/api/staff/**").hasAnyRole("SUPER_ADMIN", "TICKET_STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/tickets/validate").hasAnyRole("SUPER_ADMIN", "TICKET_STAFF")
                         .requestMatchers("/api/me/**", "/api/seat-holds/**", "/api/bookings/**", "/api/payments/**")
                         .hasRole("CUSTOMER")
                         .requestMatchers("/api/**").authenticated()

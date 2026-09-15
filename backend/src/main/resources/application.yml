@@ -74,6 +74,8 @@ app:
       webhook-secret: ${SANDBOX_PAYMENT_WEBHOOK_SECRET:local-development-secret-must-be-replaced}
   ticketing:
     qr-signing-secret: ${TICKET_QR_SIGNING_SECRET:local-development-ticket-qr-secret-must-be-replaced}
+    resend-rate-limit: ${TICKET_RESEND_RATE_LIMIT:3}
+    resend-rate-limit-window: ${TICKET_RESEND_RATE_LIMIT_WINDOW:15m}
   notification:
     email:
       enabled: ${MAIL_ENABLED:false}

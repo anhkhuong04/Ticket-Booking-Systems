@@ -494,6 +494,8 @@ its snapped prices/seats.
 - `GET /api/me/bookings` returns only the authenticated account's booking and ticket history; its response never contains a QR payload.
 - `GET /api/tickets/{code}` is available to the booking owner, a `TICKET_STAFF` or `CINEMA_MANAGER` assigned to that cinema, and `SUPER_ADMIN`. A denial is audited. Only the booking owner receives `qrPayload`; staff and administrators do not.
 - The QR payload is deterministically derived from the ticket code with a server signing secret and only its hash is stored. The client renders it only in component memory and must not use local storage, session storage, or a cache.
+- Issuing a ticket appends a `notification.email.requested` event in the same transaction. The ticket email contains ticket and showtime details but never the raw QR payload. `POST /api/tickets/{id}/resend-email` is owner-only and rate-limited per owner and ticket.
+- `POST /api/tickets/validate` accepts a QR payload or ticket code for `TICKET_STAFF` (or `SUPER_ADMIN`). The backend locks the ticket, enforces cinema scope and the active showtime window, and writes one successful `ticket_scan_logs` row. A replay returns `USED` with the first scan timestamp without changing the ticket or log.
 
 ### Admin
 

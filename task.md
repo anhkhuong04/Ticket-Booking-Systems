@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-010 — Hoàn thiện module skeleton và kiểm soát boundary`.
+**Task tiếp theo:** `LAK-011 — Chuẩn hóa API và xử lý lỗi`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -37,7 +37,7 @@
 
 ## Giai đoạn 1 — Chuẩn kỹ thuật và ranh giới hệ thống
 
-- [ ] **LAK-010 · P0 — Hoàn thiện module skeleton và kiểm soát boundary**
+- [x] **LAK-010 · P0 — Hoàn thiện module skeleton và kiểm soát boundary**
   - Bổ sung các module từ system design còn thiếu: `authorization`, `refund`, `notification`, `reporting`, `audit`.
   - Chuẩn hóa cấu trúc `api/application/domain/infrastructure`; chỉ application interface hoặc domain event contract được công khai cho module khác, `common` chỉ chứa technical capability dùng chung.
   - Thêm kiểm thử kiến trúc để ngăn truy cập repository xuyên module, dependency cycle và phụ thuộc vào implementation package của module khác.

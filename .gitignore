@@ -24,3 +24,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+#file 
+task.md
+AGENTS.md 

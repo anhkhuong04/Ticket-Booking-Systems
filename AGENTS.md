@@ -3,7 +3,7 @@
 ## Phạm vi và nguồn sự thật
 
 - File này áp dụng cho toàn repository. Quy tắc backend và frontend chỉ áp dụng cho phần tương ứng.
-- Trước khi thiết kế hoặc sửa hệ thống, đọc `overview.md` và phần liên quan trong `docs/design-systems.md`.
+- Trước khi thiết kế hoặc sửa hệ thống, đọc phần liên quan trong `docs/design-systems.md`.
 - Với frontend, đọc thêm phần màn hình liên quan trong `docs/ui-ux.md`.
 - `docs/design-systems.md` là nguồn sự thật cho nghiệp vụ, database và API; `docs/ui-ux.md` là nguồn sự thật cho trải nghiệm và giao diện. Không tự thêm nghiệp vụ hoặc thay đổi quyết định đã chốt.
 - Yêu cầu trực tiếp của người dùng được ưu tiên. Nếu yêu cầu mâu thuẫn với invariant hệ thống, nêu rõ xung đột và tác động trước khi triển khai.

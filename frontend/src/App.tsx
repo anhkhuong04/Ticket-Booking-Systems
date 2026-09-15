@@ -11,6 +11,7 @@ import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage
 import { SeatSelectionPage } from './features/reservation/SeatSelectionPage'
 import { CheckoutPage } from './features/booking/CheckoutPage'
 import { PaymentResultPage } from './features/payment/PaymentResultPage'
+import { MyTicketsPage, TicketDetailPage } from './features/ticketing/TicketPages'
 
 function AccountPage() {
   const { user, logout } = useAuth()
@@ -40,6 +41,8 @@ function App() {
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<AccountPage />} /></Route>
+    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/tickets" element={<MyTicketsPage />} /></Route>
+    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/tickets/:ticketCode" element={<TicketDetailPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/checkout/:bookingId" element={<CheckoutPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/payments/:paymentId/result" element={<PaymentResultPage />} /></Route>

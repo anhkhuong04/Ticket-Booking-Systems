@@ -25,6 +25,7 @@ import com.lak.moviebooking.reservation.application.SeatHoldManagement;
 import com.lak.moviebooking.reservation.application.SeatHoldView;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class PaymentWorkflowIT extends SeatHoldManagementIT {
@@ -92,6 +93,38 @@ class PaymentWorkflowIT extends SeatHoldManagementIT {
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, booking.id())).isZero();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM outbox_events WHERE event_type='refund.late_payment_requested' AND aggregate_id=?", Integer.class,
                 payment.id())).isEqualTo(1);
+    }
+
+    @Test
+    void rollsBackVerifiedPaymentWhenTicketIssuanceFails() {
+        Fixture fixture = fixtureWithPrice();
+        BookingView booking = booking(fixture, "payment-ticket-failure");
+        PaymentView payment = payments.create(fixture.firstUserId(), new PaymentCreateCommand(booking.bookingCode(), "sandbox"));
+        String raw = payload(payment.id(), "evt-ticket-failure-" + UUID.randomUUID(), transaction(payment.id()), 90_000L, Instant.now());
+        jdbcTemplate.execute("""
+                CREATE FUNCTION reject_ticket_issuance() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'simulated ticket issuance failure'; END;
+                $$
+                """);
+        jdbcTemplate.execute("""
+                CREATE TRIGGER reject_ticket_issuance_trigger BEFORE INSERT ON tickets
+                FOR EACH ROW EXECUTE FUNCTION reject_ticket_issuance()
+                """);
+
+        try {
+            assertThatThrownBy(() -> payments.receiveWebhook("sandbox", raw, sign(raw)))
+                    .isInstanceOf(DataAccessException.class);
+        }
+        finally {
+            jdbcTemplate.execute("DROP TRIGGER IF EXISTS reject_ticket_issuance_trigger ON tickets");
+            jdbcTemplate.execute("DROP FUNCTION IF EXISTS reject_ticket_issuance()");
+        }
+
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM payments WHERE id=?", String.class, payment.id())).isEqualTo("INITIATED");
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM bookings WHERE id=?", String.class, booking.id())).isEqualTo("PENDING_PAYMENT");
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM showtime_seats WHERE id=?", String.class, fixture.standardSeatId())).isEqualTo("PAYMENT_PENDING");
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, booking.id())).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM payment_events WHERE payment_id=?", Integer.class, payment.id())).isZero();
     }
 
     private BookingView booking(Fixture fixture, String key) {

@@ -72,6 +72,8 @@ app:
     sandbox:
       checkout-base-url: ${SANDBOX_PAYMENT_CHECKOUT_URL:http://localhost:5173/payments/sandbox}
       webhook-secret: ${SANDBOX_PAYMENT_WEBHOOK_SECRET:local-development-secret-must-be-replaced}
+  ticketing:
+    qr-signing-secret: ${TICKET_QR_SIGNING_SECRET:local-development-ticket-qr-secret-must-be-replaced}
   notification:
     email:
       enabled: ${MAIL_ENABLED:false}

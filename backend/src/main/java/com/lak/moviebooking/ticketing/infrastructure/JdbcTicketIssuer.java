@@ -3,18 +3,17 @@ package com.lak.moviebooking.ticketing.infrastructure;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.lak.moviebooking.common.application.error.ApplicationException;
 import com.lak.moviebooking.ticketing.application.TicketIssuance;
 import com.lak.moviebooking.ticketing.application.TicketIssuer;
+import com.lak.moviebooking.ticketing.application.TicketQrPayloadFactory;
 import com.lak.moviebooking.ticketing.application.TicketView;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -23,13 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class JdbcTicketIssuer implements TicketIssuer {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
+    private final TicketQrPayloadFactory qrPayloadFactory;
 
-    JdbcTicketIssuer(JdbcTemplate jdbcTemplate, Clock clock) {
+    JdbcTicketIssuer(JdbcTemplate jdbcTemplate, Clock clock, TicketQrPayloadFactory qrPayloadFactory) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
+        this.qrPayloadFactory = qrPayloadFactory;
     }
 
     @Override
@@ -47,8 +47,8 @@ class JdbcTicketIssuer implements TicketIssuer {
         }
 
         Instant now = clock.instant();
-        String rawQrToken = qrToken();
         TicketView ticket = new TicketView(UUID.randomUUID(), bookingId, ticketCode(), "VALID", now, null);
+        String rawQrToken = qrPayloadFactory.create(ticket.ticketCode());
         jdbcTemplate.update("""
                 INSERT INTO tickets (id,booking_id,ticket_code,qr_token_hash,status,issued_at,used_at,created_at,updated_at)
                 VALUES (?,?,?,?,?,?,NULL,?,?)
@@ -70,12 +70,6 @@ class JdbcTicketIssuer implements TicketIssuer {
 
     private String ticketCode() {
         return "TKT-" + UUID.randomUUID().toString().replace("-", "").toUpperCase(java.util.Locale.ROOT);
-    }
-
-    private String qrToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String sha256(String value) {

@@ -76,23 +76,23 @@
   - Chuẩn hóa email/phone trước khi lưu; unique có điều kiện trên giá trị chuẩn hóa, hash token, trạng thái tài khoản và seed bốn role đã chốt.
   - Phụ thuộc: LAK-010, LAK-012.
 
-- [ ] **LAK-021 · P0 — Đăng ký, đăng nhập, refresh và logout**
+- [x] **LAK-021 · P0 — Đăng ký, đăng nhập, refresh và logout**
   - Triển khai BCrypt/Argon2, access JWT ngắn hạn, rotation/revoke refresh token và cookie `HttpOnly/Secure/SameSite` theo môi trường.
   - Chốt CORS và cơ chế chống CSRF cho các endpoint dùng cookie ngay trong task này, không trì hoãn lớp bảo vệ nền đến hardening cuối.
   - Rate limit login; không log password/token; test token hết hạn, reuse và tài khoản bị khóa.
   - Phụ thuộc: LAK-020.
 
-- [ ] **LAK-022 · P0 — RBAC theo vai trò**
+- [x] **LAK-022 · P0 — RBAC theo vai trò**
   - Bảo vệ endpoint theo `CUSTOMER`, `TICKET_STAFF`, `CINEMA_MANAGER`, `SUPER_ADMIN`.
   - Phân quyền tại backend; audit các lần bị từ chối quan trọng và test ma trận role/endpoint.
   - Phụ thuộc: LAK-021.
 
-- [ ] **LAK-023 · P0 — Frontend authentication và route shell theo vai trò**
+- [x] **LAK-023 · P0 — Frontend authentication và route shell theo vai trò**
   - Form đăng ký/đăng nhập; session bootstrap/refresh/logout tập trung; route customer/staff/admin.
   - Guard frontend chỉ phục vụ UX, mọi quyền vẫn do backend quyết định.
   - Phụ thuộc: LAK-021.
 
-- [ ] **LAK-024 · P1 — Quên và đặt lại mật khẩu**
+- [x] **LAK-024 · P1 — Quên và đặt lại mật khẩu**
   - Token một lần, có hạn, chỉ lưu hash; gửi liên kết qua outbox/email và vô hiệu hóa sau khi dùng.
   - Trả response không làm lộ email có tồn tại hay không.
   - Phụ thuộc: LAK-021, LAK-015.

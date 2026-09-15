@@ -36,5 +36,6 @@ public abstract class AbstractIntegrationTest {
 		registry.add("spring.data.redis.host", REDIS::getHost);
 		registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
 		registry.add("spring.data.redis.password", () -> REDIS_PASSWORD);
+		registry.add("app.auth.jwt-hmac-secret", () -> "test-only-secret-that-is-longer-than-thirty-two-bytes");
 	}
 }

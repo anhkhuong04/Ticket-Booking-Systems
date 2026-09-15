@@ -8,7 +8,24 @@ public class EmailTemplateRenderer {
 	public EmailContent render(EmailOutboxPayload payload) {
 		return switch (payload.template()) {
 			case BOOKING_CONFIRMATION -> bookingConfirmation(payload);
+			case PASSWORD_RESET -> passwordReset(payload);
 		};
+	}
+
+	private EmailContent passwordReset(EmailOutboxPayload payload) {
+		String resetUrl = requiredVariable(payload, "resetUrl");
+		if (!resetUrl.startsWith("https://") && !resetUrl.startsWith("http://localhost:")) {
+			throw new IllegalArgumentException("Password reset URL is invalid");
+		}
+		return new EmailContent(
+				"Đặt lại mật khẩu LAK",
+				"""
+					<html><body>
+					<p>Bạn đã yêu cầu đặt lại mật khẩu.</p>
+					<p><a href="%s">Đặt lại mật khẩu</a></p>
+					<p>Nếu bạn không yêu cầu, bạn có thể bỏ qua email này.</p>
+					</body></html>
+					""".formatted(escapeHtml(resetUrl)));
 	}
 
 	private EmailContent bookingConfirmation(EmailOutboxPayload payload) {

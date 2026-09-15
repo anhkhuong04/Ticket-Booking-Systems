@@ -49,3 +49,17 @@ Mọi lỗi API dùng một envelope ổn định:
 - Với hai request giống nhau chạy đồng thời, chỉ một request thực thi. Request còn lại chờ có giới hạn để replay; nếu request đầu vẫn chạy thì trả `409 REQUEST_IN_PROGRESS` kèm hướng dẫn retry.
 - Record idempotency được ghi cùng transaction nghiệp vụ trong PostgreSQL. TTL phải dài hơn cửa sổ retry của operation; provider event ID của payment tuân thủ retention/audit riêng và không phụ thuộc TTL này.
 - Không dùng Redis làm nguồn quyết định idempotency.
+
+## Authentication session contract
+
+- `POST /api/auth/register` và `POST /api/auth/login` nhận JSON với thông tin tài khoản,
+  trả `{ accessToken, user }`, và chỉ ghi refresh token vào cookie `HttpOnly`.
+- `POST /api/auth/refresh` và `POST /api/auth/logout` dùng refresh-cookie, bắt buộc header
+  `X-CSRF-Token` phải khớp cookie CSRF không `HttpOnly`. `GET /api/auth/csrf` khởi tạo lại cookie này.
+- Access JWT sống ngắn, chỉ dùng header `Authorization: Bearer <token>` và không được lưu trong
+  persistent browser storage. Refresh token quay vòng sau mỗi refresh; reuse token cũ thu hồi các
+  refresh token đang hoạt động của account.
+- `GET /api/auth/session` yêu cầu access JWT hợp lệ và trả user/roles authoritative để frontend
+  dựng session. Browser CORS chỉ chấp nhận configured origins và credentials.
+- `POST /api/auth/forgot-password` luôn trả `204` để không tiết lộ email tồn tại. Reset token là
+  opaque token một lần, có hạn, chỉ lưu hash và được gửi qua transactional outbox.

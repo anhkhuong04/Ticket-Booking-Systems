@@ -9,3 +9,7 @@ server:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
+
+app:
+  auth:
+    cookie-secure: ${AUTH_COOKIE_SECURE:true}

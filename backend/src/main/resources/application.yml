@@ -65,3 +65,15 @@ app:
       endpoint: ${MAIL_ENDPOINT:}
       api-token: ${MAIL_API_TOKEN:}
       from-address: ${MAIL_FROM_ADDRESS:}
+  auth:
+    jwt-hmac-secret: ${JWT_HMAC_SECRET}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:7d}
+    password-reset-token-ttl: ${PASSWORD_RESET_TOKEN_TTL:30m}
+    password-reset-url: ${PASSWORD_RESET_URL:http://localhost:5173/reset-password}
+    refresh-cookie-name: ${REFRESH_COOKIE_NAME:lak_refresh_token}
+    csrf-cookie-name: ${CSRF_COOKIE_NAME:lak_csrf_token}
+    cookie-secure: ${AUTH_COOKIE_SECURE:false}
+    cookie-same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
+    login-rate-limit: ${LOGIN_RATE_LIMIT:5}
+    login-rate-limit-window: ${LOGIN_RATE_LIMIT_WINDOW:1m}

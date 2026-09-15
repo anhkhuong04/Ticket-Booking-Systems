@@ -7,7 +7,8 @@ event cũng rollback.
 
 ## Payload và template
 
-Payload hiện hỗ trợ template `BOOKING_CONFIRMATION`:
+Payload hiện hỗ trợ template `BOOKING_CONFIRMATION` và `PASSWORD_RESET`. Password-reset
+payload chỉ chứa `resetUrl` đã được cấu hình phía backend; raw reset token không được ghi log.
 
 ```json
 {

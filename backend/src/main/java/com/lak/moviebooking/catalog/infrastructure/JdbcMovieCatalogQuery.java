@@ -58,6 +58,7 @@ class JdbcMovieCatalogQuery implements MovieCatalogQuery {
                 LEFT JOIN movie_genres mg ON mg.movie_id = m.id
                 LEFT JOIN genres g ON g.id = mg.genre_id
                 WHERE m.id = ?
+                  AND m.status <> 'ARCHIVED'
                 GROUP BY m.id
                 """, this::mapDetail, movieId).stream().findFirst();
         return movie.orElseThrow(() -> ApplicationException.notFound("MOVIE_NOT_FOUND", "Movie was not found"));
@@ -83,7 +84,8 @@ class JdbcMovieCatalogQuery implements MovieCatalogQuery {
             predicates.add("EXISTS (SELECT 1 FROM movie_genres search_mg JOIN genres search_g ON search_g.id = search_mg.genre_id WHERE search_mg.movie_id = m.id AND search_g.slug = ?)");
             parameters.add(criteria.genre());
         }
-        return predicates.isEmpty() ? "" : " WHERE " + String.join(" AND ", predicates);
+        predicates.add("m.status <> 'ARCHIVED'");
+        return " WHERE " + String.join(" AND ", predicates);
     }
 
     private Object[] withPageParameters(List<Object> parameters, MovieSearchCriteria criteria) {

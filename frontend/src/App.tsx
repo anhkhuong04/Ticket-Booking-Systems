@@ -2,6 +2,8 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './features/auth/AuthPages'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
+import { AdminAuditoriumsPage, AdminCinemasPage, AdminMoviesPage } from './features/admin/AdminPages'
+import { AdminShell } from './features/admin/AdminShell'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
 import { CustomerShell } from './features/catalog/CustomerShell'
 
@@ -33,7 +35,14 @@ function App() {
     <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<AccountPage />} /></Route>
     <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff" element={<RoleShell title="Khu vực nhân viên" />} /></Route>
-    <Route element={<ProtectedRoute roles={['CINEMA_MANAGER', 'SUPER_ADMIN']} />}><Route path="/admin" element={<RoleShell title="Khu vực quản trị" />} /></Route>
+    <Route element={<ProtectedRoute roles={['CINEMA_MANAGER', 'SUPER_ADMIN']} />}>
+      <Route element={<AdminShell />}>
+        <Route path="/admin" element={<Navigate to="/admin/movies" replace />} />
+        <Route path="/admin/movies" element={<AdminMoviesPage />} />
+        <Route path="/admin/cinemas" element={<AdminCinemasPage />} />
+        <Route path="/admin/cinemas/:cinemaId/auditoriums" element={<AdminAuditoriumsPage />} />
+      </Route>
+    </Route>
     <Route path="/forbidden" element={<ForbiddenPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes></AuthProvider>

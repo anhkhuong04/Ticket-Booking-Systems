@@ -65,6 +65,14 @@ app:
       endpoint: ${MAIL_ENDPOINT:}
       api-token: ${MAIL_API_TOKEN:}
       from-address: ${MAIL_FROM_ADDRESS:}
+  media:
+    cloudinary:
+      enabled: ${CLOUDINARY_ENABLED:false}
+      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+      api-key: ${CLOUDINARY_API_KEY:}
+      api-secret: ${CLOUDINARY_API_SECRET:}
+      folder: ${CLOUDINARY_FOLDER:lak-movies}
+      max-upload-megabytes: ${CLOUDINARY_MAX_UPLOAD_MEGABYTES:5}
   auth:
     jwt-hmac-secret: ${JWT_HMAC_SECRET}
     access-token-ttl: ${ACCESS_TOKEN_TTL:15m}

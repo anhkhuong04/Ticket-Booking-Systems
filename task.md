@@ -118,11 +118,11 @@
   - Hoàn tất khi integration test chứng minh không truy cập chéo chi nhánh.
   - Phụ thuộc: LAK-022, LAK-031.
 
-- [ ] **LAK-034 · P1 — Quản trị catalog và media**
+- [x] **LAK-034 · P1 — Quản trị catalog và media**
   - API/UI CRUD phim, thể loại; upload Cloudinary do backend ký, kiểm tra loại/kích thước file và audit thay đổi.
   - Phụ thuộc: LAK-022, LAK-030.
 
-- [ ] **LAK-035 · P1 — Quản trị rạp, phòng và sơ đồ ghế**
+- [x] **LAK-035 · P1 — Quản trị rạp, phòng và sơ đồ ghế**
   - API/UI CRUD rạp, phòng, sơ đồ ghế; giới hạn manager theo chi nhánh.
   - Không cho thay đổi phá vỡ suất chiếu/booking đã phát sinh; test ghế đôi và vị trí trùng.
   - Phụ thuộc: LAK-022, LAK-031, LAK-033.

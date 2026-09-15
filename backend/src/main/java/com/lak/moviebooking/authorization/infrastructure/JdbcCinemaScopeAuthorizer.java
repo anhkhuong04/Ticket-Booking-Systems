@@ -1,6 +1,7 @@
 package com.lak.moviebooking.authorization.infrastructure;
 
 import java.util.UUID;
+import java.util.Set;
 
 import com.lak.moviebooking.audit.application.DeniedAccessAudit;
 import com.lak.moviebooking.authorization.application.CinemaScopeAuthorizer;
@@ -37,5 +38,23 @@ class JdbcCinemaScopeAuthorizer implements CinemaScopeAuthorizer {
         }
         deniedAccessAudit.record(actor.userId(), "/api/admin/cinemas/" + cinemaId, "CINEMA_SCOPE");
         throw ApplicationException.forbidden("CINEMA_SCOPE_DENIED", "You are not assigned to this cinema");
+    }
+
+    @Override
+    public void requireSuperAdmin(AuthenticatedPrincipal actor, String path) {
+        if (actor.roles().contains("SUPER_ADMIN")) {
+            return;
+        }
+        deniedAccessAudit.record(actor.userId(), path, "SUPER_ADMIN");
+        throw ApplicationException.forbidden("SUPER_ADMIN_REQUIRED", "This operation requires system administration permission");
+    }
+
+    @Override
+    public Set<UUID> accessibleCinemaIds(AuthenticatedPrincipal actor) {
+        if (actor.roles().contains("SUPER_ADMIN")) {
+            return Set.of();
+        }
+        return Set.copyOf(jdbcTemplate.queryForList("SELECT cinema_id FROM staff_cinema_assignments WHERE user_id = ?",
+                UUID.class, actor.userId()));
     }
 }

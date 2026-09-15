@@ -1,7 +1,6 @@
 package com.lak.moviebooking.catalog.api;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import com.lak.moviebooking.catalog.application.GenreSummary;
@@ -19,12 +18,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
+@Validated
 @RequestMapping("/api")
 public class MovieCatalogController {
 
-    private static final Set<String> RELEASE_STATUSES = Set.of("NOW_SHOWING", "COMING_SOON");
     private final MovieCatalogQuery movieCatalogQuery;
 
     public MovieCatalogController(MovieCatalogQuery movieCatalogQuery) {
@@ -33,12 +33,12 @@ public class MovieCatalogController {
 
     @GetMapping("/movies")
     public PageResponse<MovieSummary> movies(
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @Pattern(regexp = "(?i)NOW_SHOWING|COMING_SOON") String status,
             @RequestParam(name = "q", required = false) String query,
             @RequestParam(required = false) @Pattern(regexp = "[a-z0-9]+(?:-[a-z0-9]+)*") String genre,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        String normalizedStatus = normalizeStatus(status);
+        String normalizedStatus = status == null ? null : status.toUpperCase();
         CatalogPage<MovieSummary> result = movieCatalogQuery.findMovies(
                 new MovieSearchCriteria(normalizedStatus, normalize(query), genre, page, size));
         return new PageResponse<>(result.content(), result.page(), result.size(), result.totalElements(), result.totalPages());
@@ -52,18 +52,6 @@ public class MovieCatalogController {
     @GetMapping("/genres")
     public List<GenreSummary> genres() {
         return movieCatalogQuery.findGenres();
-    }
-
-    private String normalizeStatus(String status) {
-        String normalized = normalize(status);
-        if (normalized == null) {
-            return null;
-        }
-        String value = normalized.toUpperCase();
-        if (!RELEASE_STATUSES.contains(value)) {
-            throw new IllegalArgumentException("Unsupported movie status");
-        }
-        return value;
     }
 
     private String normalize(String value) {

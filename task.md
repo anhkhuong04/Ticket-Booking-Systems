@@ -26,7 +26,7 @@
 
 `Nền tảng → Chuẩn kỹ thuật → Identity/RBAC → Catalog & Cinema → Showtime & Pricing → Seat Hold → Booking → Ticket foundation → Payment → Ticket API → Scanner/Reporting`
 
-**Task tiếp theo:** `LAK-011 — Chuẩn hóa API và xử lý lỗi`.
+**Task tiếp theo:** `LAK-012 — Nền kiểm thử tích hợp và dữ liệu test`.
 
 ## Giai đoạn 0 — Nền tảng chạy end-to-end
 
@@ -43,7 +43,7 @@
   - Thêm kiểm thử kiến trúc để ngăn truy cập repository xuyên module, dependency cycle và phụ thuộc vào implementation package của module khác.
   - Hoàn tất khi build pass và các vi phạm boundary đại diện đều bị test phát hiện.
 
-- [ ] **LAK-011 · P0 — Chuẩn hóa API và xử lý lỗi**
+- [x] **LAK-011 · P0 — Chuẩn hóa API và xử lý lỗi**
   - Định nghĩa response lỗi thống nhất, validation, pagination/filter convention và ánh xạ `400/401/403/409/410/422/429`.
   - Chốt contract `Idempotency-Key`: phạm vi actor/operation, payload hash, xử lý request đồng thời, lưu/replay response và thời hạn lưu phù hợp.
   - Thêm `request_id` xuyên suốt request/response/log; không lộ stack trace hoặc dữ liệu nhạy cảm.

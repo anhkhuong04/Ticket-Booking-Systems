@@ -150,7 +150,7 @@
   - Luồng customer không hiển thị suất đã đóng bán, nhất quán với contract của LAK-042 và system design.
   - Phụ thuộc: LAK-032, LAK-042.
 
-- [ ] **LAK-044 · P1 — UI quản trị suất chiếu và bảng giá**
+- [x] **LAK-044 · P1 — UI quản trị suất chiếu và bảng giá**
   - CRUD lịch chiếu/giá, cảnh báo xung đột phòng và xác nhận tác vụ ảnh hưởng người mua.
   - Audit đổi giá và các yêu cầu hủy suất; enforce cinema scope.
   - Chưa cho hủy suất có booking đã thanh toán cho đến khi LAK-089 hoàn tất luồng bồi hoàn; không để CRUD đơn giản làm mất quyền lợi người mua.

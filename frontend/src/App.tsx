@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './features/auth/AuthProvider'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './features/auth/AuthPages'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { AdminAuditoriumsPage, AdminCinemasPage, AdminMoviesPage } from './features/admin/AdminPages'
+import { AdminPricingPage, AdminShowtimesPage } from './features/admin/AdminShowtimePages'
 import { AdminShell } from './features/admin/AdminShell'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
 import { CustomerShell } from './features/catalog/CustomerShell'
@@ -43,6 +44,8 @@ function App() {
         <Route path="/admin/movies" element={<AdminMoviesPage />} />
         <Route path="/admin/cinemas" element={<AdminCinemasPage />} />
         <Route path="/admin/cinemas/:cinemaId/auditoriums" element={<AdminAuditoriumsPage />} />
+        <Route path="/admin/showtimes" element={<AdminShowtimesPage />} />
+        <Route path="/admin/pricing" element={<AdminPricingPage />} />
       </Route>
     </Route>
     <Route path="/forbidden" element={<ForbiddenPage />} />

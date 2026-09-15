@@ -457,6 +457,11 @@ require `SUPER_ADMIN`; cinema-scoped profiles and showtimes require access to th
 Showtime creation snapshots prices using `showtime override -> cinema profile -> system profile`
 and snapshots the active auditorium seat layout.
 
+Admin showtime reads are scoped by `cinemaId` and date. Cancellation is a soft status transition
+with an audit record. Until LAK-089 provides the refund workflow, cancellation is refused whenever
+the showtime has a held, payment-pending, or sold seat; the API never deletes a showtime or changes
+its snapped prices/seats.
+
 ### Booking
 
 | Method | Endpoint |

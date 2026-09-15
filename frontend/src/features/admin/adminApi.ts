@@ -6,6 +6,10 @@ export type Auditorium = { id: string; cinemaId: string; name: string; screenFor
 export type Seat = { id?: string; rowLabel: string; seatNumber: number; seatType: 'STANDARD' | 'VIP' | 'COUPLE'; pairKey: string | null; status: 'ACTIVE' | 'LOCKED' }
 export type MoviePayload = Omit<MovieDetail, 'id' | 'genres'> & { genreIds: string[] }
 export type AdminMovie = Omit<MovieDetail, 'status'> & { status: 'NOW_SHOWING' | 'COMING_SOON' | 'ARCHIVED' }
+export type AdminShowtime = { id: string; cinemaId: string; cinemaName: string; auditoriumId: string; auditoriumName: string; movieId: string; movieTitle: string; startAt: string; endAt: string; salesCloseAt: string; status: 'SCHEDULED' | 'CANCELLED'; cancellationBlocked: boolean }
+export type PriceRule = { id: string; profileId: string; dayType: 'ANY' | 'WEEKDAY' | 'WEEKEND'; timeFrom: string | null; timeTo: string | null; screenFormat: string | null; seatType: string | null; amount: number; priority: number }
+export type PriceProfile = { id: string; cinemaId: string | null; name: string; effectiveFrom: string; effectiveTo: string | null; status: 'ACTIVE' | 'INACTIVE' }
+export type PriceProfileDetail = { profile: PriceProfile; rules: PriceRule[] }
 
 export async function getAdminMovies() { return (await apiClient.get<AdminMovie[]>('/api/admin/movies')).data }
 export async function createMovie(payload: MoviePayload) { return (await apiClient.post<MovieDetail>('/api/admin/movies', payload)).data }
@@ -22,3 +26,13 @@ export async function createAuditorium(cinemaId: string, payload: Omit<Auditoriu
 export async function deactivateAuditorium(id: string) { await apiClient.delete(`/api/admin/auditoriums/${id}`) }
 export async function getSeats(auditoriumId: string) { return (await apiClient.get<Seat[]>(`/api/admin/auditoriums/${auditoriumId}/seats`)).data }
 export async function saveSeats(auditoriumId: string, seats: Seat[]) { return (await apiClient.put<Seat[]>(`/api/admin/auditoriums/${auditoriumId}/seats`, seats)).data }
+export async function getAdminShowtimes(cinemaId: string, date: string) { return (await apiClient.get<AdminShowtime[]>('/api/admin/showtimes', { params: { cinemaId, date } })).data }
+export async function createShowtime(payload: { movieId: string; auditoriumId: string; startAt: string; priceOverrides: Record<string, number> }) { return (await apiClient.post<AdminShowtime>('/api/admin/showtimes', payload)).data }
+export async function cancelShowtime(showtimeId: string) { return (await apiClient.delete<AdminShowtime>(`/api/admin/showtimes/${showtimeId}`)).data }
+export async function getPriceProfiles(cinemaId?: string) { return (await apiClient.get<PriceProfileDetail[]>('/api/admin/price-profiles', { params: { cinemaId } })).data }
+export async function createPriceProfile(payload: Omit<PriceProfile, 'id'>) { return (await apiClient.post<PriceProfile>('/api/admin/price-profiles', payload)).data }
+export async function updatePriceProfile(id: string, payload: Omit<PriceProfile, 'id'>) { return (await apiClient.put<PriceProfile>(`/api/admin/price-profiles/${id}`, payload)).data }
+export async function deactivatePriceProfile(id: string) { await apiClient.delete(`/api/admin/price-profiles/${id}`) }
+export async function createPriceRule(profileId: string, payload: Omit<PriceRule, 'id' | 'profileId'>) { return (await apiClient.post<PriceRule>(`/api/admin/price-profiles/${profileId}/rules`, payload)).data }
+export async function updatePriceRule(id: string, payload: Omit<PriceRule, 'id' | 'profileId'>) { return (await apiClient.put<PriceRule>(`/api/admin/price-rules/${id}`, payload)).data }
+export async function deletePriceRule(id: string) { await apiClient.delete(`/api/admin/price-rules/${id}`) }

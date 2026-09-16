@@ -5,6 +5,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { AdminAuditoriumsPage, AdminCinemasPage, AdminMoviesPage } from './features/admin/AdminPages'
 import { AdminPricingPage, AdminShowtimesPage } from './features/admin/AdminShowtimePages'
 import { AdminShell } from './features/admin/AdminShell'
+import { AdminBookingsPage, AdminDashboardPage, AdminPaymentsPage, AdminRefundsPage, AdminUsersPage } from './features/admin/AdminOperationsPages'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
 import { CustomerShell } from './features/catalog/CustomerShell'
 import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage'
@@ -52,12 +53,16 @@ function App() {
     <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff" element={<RoleShell title="Khu vực nhân viên" />} /></Route>
     <Route element={<ProtectedRoute roles={['CINEMA_MANAGER', 'SUPER_ADMIN']} />}>
       <Route element={<AdminShell />}>
-        <Route path="/admin" element={<Navigate to="/admin/movies" replace />} />
+        <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/movies" element={<AdminMoviesPage />} />
         <Route path="/admin/cinemas" element={<AdminCinemasPage />} />
         <Route path="/admin/cinemas/:cinemaId/auditoriums" element={<AdminAuditoriumsPage />} />
         <Route path="/admin/showtimes" element={<AdminShowtimesPage />} />
         <Route path="/admin/pricing" element={<AdminPricingPage />} />
+        <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+        <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+        <Route path="/admin/refunds" element={<AdminRefundsPage />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
       </Route>
     </Route>
     <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff/scanner" element={<StaffScannerPage />} /></Route>

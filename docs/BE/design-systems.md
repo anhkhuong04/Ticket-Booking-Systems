@@ -457,10 +457,12 @@ require `SUPER_ADMIN`; cinema-scoped profiles and showtimes require access to th
 Showtime creation snapshots prices using `showtime override -> cinema profile -> system profile`
 and snapshots the active auditorium seat layout.
 
-Admin showtime reads are scoped by `cinemaId` and date. Cancellation is a soft status transition
-with an audit record. Until LAK-089 provides the refund workflow, cancellation is refused whenever
-the showtime has a held, payment-pending, or sold seat; the API never deletes a showtime or changes
-its snapped prices/seats.
+Admin showtime reads are scoped by `cinemaId` and date. Cancellation is an idempotent soft status
+transition with an audit record. It immediately closes the showtime to new holds and checkout, then
+an outbox workflow releases active holds, expires payment-pending bookings, and requests exactly one
+full refund for every paid booking. The workflow cancels valid tickets, restores only vouchers still
+within their validity window, and preserves provider failures as `REFUND_FAILED` for manual review.
+The API never deletes a showtime or changes its snapped prices/seats.
 
 ### Booking
 
@@ -509,6 +511,13 @@ its snapped prices/seats.
 - Quản lý người dùng và nhân viên.
 - Báo cáo doanh thu, vé bán và tỷ lệ lấp đầy.
 
+`GET /api/admin/bookings`, `GET /api/admin/payments`, `GET /api/admin/refunds` và
+`GET /api/admin/reports/summary` là read model, luôn kiểm tra cinema scope tại backend và không
+có API sửa trực tiếp snapshot booking/payment. `POST /api/admin/refunds/{id}/retry` chỉ re-queue
+`REFUND_FAILED` và ghi audit. Quản lý user là `SUPER_ADMIN` only; khóa user thu hồi session đang
+hoạt động và cả khóa/mở khóa đều được audit. Báo cáo dùng `Asia/Ho_Chi_Minh`; doanh thu là net sau
+refund hoàn tất, còn ticket/occupancy chỉ tính vé valid/used và ghế SOLD.
+
 ### Mã lỗi quan trọng
 
 | HTTP | Ý nghĩa |
@@ -549,6 +558,13 @@ tạo booking `PENDING_PAYMENT` và chuyển ghế sang `PAYMENT_PENDING`; check
 booking code, voucher, các khoản tiền, item snapshot, `paymentDeadline`, `hardDeadline` và `serverNow`. Reuse key
 với cùng hold và voucher replay booking; reuse key với payload khác bị từ chối. `GET
 /api/bookings/{code}` chỉ cho chủ booking.
+
+`POST /api/bookings/{id}/refunds` yêu cầu access token `CUSTOMER` và header `Idempotency-Key`.
+API chỉ hoàn toàn bộ booking khi booking thuộc tài khoản, đã thanh toán, vé chưa dùng và thời điểm
+hiện tại còn ít nhất 45 phút trước giờ chiếu. Backend khóa payment → booking → ticket → ghế, hủy
+ticket, giải phóng ghế, khôi phục voucher còn hạn và tạo/replay một refund 100%.
+`GET /api/refunds/{id}` chỉ trả refund thuộc tài khoản đã xác thực; `REFUND_FAILED` là trạng thái
+xử lý thủ công, không tạo refund mới.
 
 ---
 

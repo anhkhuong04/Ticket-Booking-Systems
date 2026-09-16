@@ -2,6 +2,7 @@ package com.lak.moviebooking.reservation.infrastructure;
 
 import com.lak.moviebooking.common.outbox.application.OutboxEvent;
 import com.lak.moviebooking.common.outbox.application.OutboxEventHandler;
+import com.lak.moviebooking.reservation.application.SeatAvailabilityEvent;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -10,7 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 class SeatEventsOutboxHandler implements OutboxEventHandler {
 
     private static final java.util.Set<String> EVENT_TYPES = java.util.Set.of(
-            "reservation.seats_updated", "reservation.hold_expired");
+            "reservation.seats_updated", "reservation.hold_expired", "reservation.showtime_cancelled");
     private final ObjectMapper objectMapper;
     private final SeatEventsWebSocketHandler webSocketHandler;
 

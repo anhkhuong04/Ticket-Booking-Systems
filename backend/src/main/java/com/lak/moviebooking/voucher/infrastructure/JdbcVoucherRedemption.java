@@ -42,6 +42,29 @@ class JdbcVoucherRedemption implements VoucherRedemption {
         return new AppliedVoucher(voucher.id(), voucher.code(), discount);
     }
 
+    @Override
+    @Transactional
+    public void restoreForRefund(UUID bookingId, Instant now) {
+        RedemptionRow redemption = jdbcTemplate.query("""
+                SELECT redemption.id,redemption.voucher_id,voucher.ends_at,redemption.restored_at
+                FROM voucher_redemptions redemption
+                JOIN vouchers voucher ON voucher.id=redemption.voucher_id
+                WHERE redemption.booking_id=? FOR UPDATE OF redemption,voucher
+                """, (resultSet, rowNumber) -> new RedemptionRow(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("voucher_id", UUID.class),
+                nullableInstant(resultSet, "ends_at"), nullableInstant(resultSet, "restored_at")), bookingId)
+                .stream().findFirst().orElse(null);
+        if (redemption == null || redemption.restoredAt() != null
+                || (redemption.endsAt() != null && !now.isBefore(redemption.endsAt()))) return;
+        int updated = jdbcTemplate.update("""
+                UPDATE vouchers SET usage_count=usage_count-1,updated_at=?
+                WHERE id=? AND usage_count > 0
+                """, atUtc(now), redemption.voucherId());
+        if (updated != 1) throw new IllegalStateException("Voucher usage count cannot be restored");
+        jdbcTemplate.update("UPDATE voucher_redemptions SET restored_at=? WHERE id=? AND restored_at IS NULL",
+                atUtc(now), redemption.id());
+    }
+
     private VoucherRow lockByCode(String code) {
         return jdbcTemplate.query("""
                 SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_amount,usage_limit,usage_count,
@@ -68,7 +91,7 @@ class JdbcVoucherRedemption implements VoucherRedemption {
 
     private int redemptionsByUser(UUID voucherId, UUID userId) {
         Integer count = jdbcTemplate.queryForObject("""
-                SELECT count(*) FROM voucher_redemptions WHERE voucher_id=? AND user_id=?
+                SELECT count(*) FROM voucher_redemptions WHERE voucher_id=? AND user_id=? AND restored_at IS NULL
                 """, Integer.class, voucherId, userId);
         return count == null ? 0 : count;
     }
@@ -131,5 +154,8 @@ class JdbcVoucherRedemption implements VoucherRedemption {
             UUID id, String code, String discountType, long discountValue, Long maxDiscountAmount,
             long minOrderAmount, Integer usageLimit, int usageCount, Integer perUserLimit,
             Instant startsAt, Instant endsAt, String status) {
+    }
+
+    private record RedemptionRow(UUID id, UUID voucherId, Instant endsAt, Instant restoredAt) {
     }
 }

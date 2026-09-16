@@ -2,6 +2,7 @@ package com.lak.moviebooking.reservation.application;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 public interface SeatHoldManagement {
 
@@ -14,4 +15,6 @@ public interface SeatHoldManagement {
     void consumeForCheckout(UUID userId, UUID holdId);
 
     int expireDueHolds(Instant now);
+
+    List<UUID> cancelActiveForShowtime(UUID showtimeId, Instant now);
 }

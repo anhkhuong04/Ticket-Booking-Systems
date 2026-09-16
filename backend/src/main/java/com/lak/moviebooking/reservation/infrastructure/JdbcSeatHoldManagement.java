@@ -23,6 +23,7 @@ import com.lak.moviebooking.common.outbox.application.OutboxEventWriter;
 import com.lak.moviebooking.reservation.application.SeatHoldCommand;
 import com.lak.moviebooking.reservation.application.SeatHoldManagement;
 import com.lak.moviebooking.reservation.application.SeatHoldView;
+import com.lak.moviebooking.reservation.application.SeatAvailabilityEvent;
 import com.lak.moviebooking.showtime.application.ShowtimeSeatForHold;
 import com.lak.moviebooking.showtime.application.ShowtimeSeatInventory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -154,6 +155,26 @@ class JdbcSeatHoldManagement implements SeatHoldManagement {
     @Transactional
     public int expireDueHolds(Instant now) {
         return expireDueHoldsInternal(now);
+    }
+
+    @Override
+    @Transactional
+    public List<UUID> cancelActiveForShowtime(UUID showtimeId, Instant now) {
+        List<SeatHoldRow> holds = jdbcTemplate.query("""
+                SELECT id,user_id,showtime_id,status,expires_at,hard_expires_at
+                FROM seat_holds WHERE showtime_id=? AND status='ACTIVE'
+                ORDER BY id FOR UPDATE
+                """, this::mapHold, showtimeId);
+        List<UUID> released = new ArrayList<>();
+        for (SeatHoldRow hold : holds) {
+            List<UUID> releasedSeatIds = showtimeSeatInventory.releaseHold(hold.id(), now);
+            jdbcTemplate.update("UPDATE seat_holds SET status='CANCELLED',updated_at=? WHERE id=? AND status='ACTIVE'",
+                    atUtc(now), hold.id());
+            released.addAll(releasedSeatIds);
+            appendSeatEvent("SEATS_UPDATED", showtimeId, hold.id(), releasedSeatIds);
+            afterCommit(() -> redisSeatHoldTtlStore.delete(showtimeId, releasedSeatIds));
+        }
+        return List.copyOf(released);
     }
 
     private int expireDueHoldsInternal(Instant now) {

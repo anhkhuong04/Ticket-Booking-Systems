@@ -2,10 +2,15 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 
 const links = [
+  { to: '/admin', label: 'Dashboard' },
   { to: '/admin/movies', label: 'Phim' },
   { to: '/admin/cinemas', label: 'Rạp & phòng' },
   { to: '/admin/showtimes', label: 'Suất chiếu' },
   { to: '/admin/pricing', label: 'Bảng giá' },
+  { to: '/admin/bookings', label: 'Booking' },
+  { to: '/admin/payments', label: 'Thanh toán' },
+  { to: '/admin/refunds', label: 'Hoàn tiền' },
+  { to: '/admin/users', label: 'Người dùng' },
 ]
 
 export function AdminShell() {

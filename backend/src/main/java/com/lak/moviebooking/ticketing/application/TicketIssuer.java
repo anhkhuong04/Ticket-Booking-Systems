@@ -6,4 +6,6 @@ import java.util.UUID;
 public interface TicketIssuer {
 
     TicketIssuance issueForPaidBooking(UUID bookingId);
+
+    void cancelForRefund(UUID bookingId);
 }

@@ -70,10 +70,7 @@ class ShowtimeManagementIT extends AbstractIntegrationTest {
         ShowtimeView protectedShowtime = showtimeManagement.createShowtime(actorId, new ShowtimeCreateCommand(
                 fixture.movieId(), fixture.auditoriumId(), startAt, Map.of("STANDARD", 100_000L, "VIP", 180_000L)));
         jdbcTemplate.update("UPDATE showtime_seats SET status='SOLD' WHERE showtime_id=? AND status='AVAILABLE'", protectedShowtime.id());
-        assertThatThrownBy(() -> showtimeManagement.cancelShowtime(actorId, protectedShowtime.id()))
-                .isInstanceOf(ApplicationException.class)
-                .extracting(error -> ((ApplicationException) error).code())
-                .isEqualTo("SHOWTIME_CANCELLATION_REQUIRES_REFUND");
+        assertThat(showtimeManagement.cancelShowtime(actorId, protectedShowtime.id()).status()).isEqualTo("CANCELLED");
     }
 
     private Fixture createFixture() {

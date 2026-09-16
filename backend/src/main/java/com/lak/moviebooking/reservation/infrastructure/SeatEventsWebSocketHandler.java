@@ -9,6 +9,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import com.lak.moviebooking.reservation.application.SeatAvailabilityEvent;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 

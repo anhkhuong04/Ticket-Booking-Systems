@@ -65,7 +65,7 @@ class SecurityConfiguration {
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "CINEMA_MANAGER")
                         .requestMatchers("/api/staff/**").hasAnyRole("SUPER_ADMIN", "TICKET_STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/tickets/validate").hasAnyRole("SUPER_ADMIN", "TICKET_STAFF")
-                        .requestMatchers("/api/me/**", "/api/seat-holds/**", "/api/bookings/**", "/api/payments/**")
+                        .requestMatchers("/api/me/**", "/api/seat-holds/**", "/api/bookings/**", "/api/payments/**", "/api/refunds/**")
                         .hasRole("CUSTOMER")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())

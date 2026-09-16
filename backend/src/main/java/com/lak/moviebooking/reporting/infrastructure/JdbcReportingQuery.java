@@ -1,0 +1,19 @@
+package com.lak.moviebooking.reporting.infrastructure;
+import java.sql.ResultSet; import java.sql.SQLException; import java.time.LocalDate; import java.util.List; import java.util.Set; import java.util.UUID;
+import com.lak.moviebooking.reporting.application.ReportSummary; import com.lak.moviebooking.reporting.application.ReportingQuery; import org.springframework.jdbc.core.JdbcTemplate; import org.springframework.stereotype.Service;
+@Service class JdbcReportingQuery implements ReportingQuery {
+ private final JdbcTemplate jdbc; JdbcReportingQuery(JdbcTemplate jdbc){this.jdbc=jdbc;}
+ public ReportSummary summary(LocalDate from,LocalDate to,UUID cinemaId,Set<UUID> scope){String array=array(scope); Object[] args={array,array,cinemaId,cinemaId,from,to};
+  String where="(? = '{}' OR c.id=ANY(CAST(? AS uuid[]))) AND (? IS NULL OR c.id=?) AND (b.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN ? AND ?";
+  long bookings=jdbc.queryForObject("SELECT count(*) FROM bookings b JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+where+" AND b.status IN ('PAID','REFUND_PENDING','CANCELLED')",Long.class,args);
+  long tickets=jdbc.queryForObject("SELECT count(*) FROM tickets t JOIN bookings b ON b.id=t.booking_id JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+where+" AND t.status IN ('VALID','USED')",Long.class,args);
+  String showtimeWhere="(? = '{}' OR c.id=ANY(CAST(? AS uuid[]))) AND (? IS NULL OR c.id=?) AND (st.start_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN ? AND ?";
+  long sold=jdbc.queryForObject("SELECT count(*) FROM showtime_seats ss JOIN showtimes st ON st.id=ss.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+showtimeWhere+" AND ss.status='SOLD'",Long.class,args);
+  long capacity=jdbc.queryForObject("SELECT count(*) FROM showtime_seats ss JOIN showtimes st ON st.id=ss.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+showtimeWhere,Long.class,args);
+  long revenue=jdbc.queryForObject("SELECT COALESCE(sum(b.total_amount) FILTER (WHERE b.status='PAID'),0)-COALESCE(sum(r.amount) FILTER (WHERE r.status='REFUNDED'),0) FROM bookings b JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id LEFT JOIN refunds r ON r.booking_id=b.id WHERE "+where,Long.class,args);
+  long pending=jdbc.queryForObject("SELECT count(*) FROM bookings b JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+where+" AND b.status IN ('PENDING_PAYMENT','PAYMENT_REVIEW','REFUND_PENDING')",Long.class,args);
+  long attention=jdbc.queryForObject("SELECT count(*) FROM refunds r JOIN bookings b ON b.id=r.booking_id JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id WHERE "+where+" AND r.status='REFUND_FAILED'",Long.class,args);
+  List<ReportSummary.DailyMetric> daily=jdbc.query("SELECT (b.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,COALESCE(sum(b.total_amount) FILTER (WHERE b.status='PAID'),0),count(t.id) FILTER (WHERE t.status IN ('VALID','USED')) FROM bookings b JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id LEFT JOIN tickets t ON t.booking_id=b.id WHERE "+where+" GROUP BY 1 ORDER BY 1",(r,n)->new ReportSummary.DailyMetric(r.getObject(1,LocalDate.class),r.getLong(2),r.getLong(3)),args);
+  return new ReportSummary(revenue,bookings,tickets,capacity==0?0:sold*100/capacity,pending,attention,daily); }
+ private String array(Set<UUID> scope){return "{"+scope.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(","))+"}";}
+}

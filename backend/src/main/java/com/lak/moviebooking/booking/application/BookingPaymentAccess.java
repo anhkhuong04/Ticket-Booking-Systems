@@ -2,6 +2,7 @@ package com.lak.moviebooking.booking.application;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 /** Transactional cross-module contract for payment state transitions. */
 public interface BookingPaymentAccess {
@@ -17,4 +18,12 @@ public interface BookingPaymentAccess {
     void markPaymentReview(UUID bookingId, Instant now);
 
     void markRefundPending(UUID bookingId, Instant now);
+
+    void markRefunded(UUID bookingId, Instant now);
+
+    List<UUID> findBookingIdsForShowtimeCancellation(UUID showtimeId);
+
+    PaymentBooking findForShowtimeCancellation(UUID bookingId);
+
+    boolean expirePendingForShowtimeCancellation(UUID bookingId, Instant now);
 }

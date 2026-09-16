@@ -21,4 +21,6 @@ public interface ShowtimeSeatInventory {
     List<UUID> markSoldForBooking(UUID bookingId, Instant now);
 
     List<UUID> releaseBooking(UUID bookingId, Instant now);
+
+    List<UUID> releaseSoldBookingForRefund(UUID bookingId, Instant now);
 }

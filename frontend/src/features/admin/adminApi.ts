@@ -36,3 +36,16 @@ export async function deactivatePriceProfile(id: string) { await apiClient.delet
 export async function createPriceRule(profileId: string, payload: Omit<PriceRule, 'id' | 'profileId'>) { return (await apiClient.post<PriceRule>(`/api/admin/price-profiles/${profileId}/rules`, payload)).data }
 export async function updatePriceRule(id: string, payload: Omit<PriceRule, 'id' | 'profileId'>) { return (await apiClient.put<PriceRule>(`/api/admin/price-rules/${id}`, payload)).data }
 export async function deletePriceRule(id: string) { await apiClient.delete(`/api/admin/price-rules/${id}`) }
+
+export type AdminBookingRow = { id: string; bookingCode: string; customerName: string; customerEmail: string; cinemaId: string; cinemaName: string; movieTitle: string; startAt: string; totalAmount: number; status: string; createdAt: string }
+export type AdminPaymentRow = { id: string; bookingCode: string; cinemaId: string; cinemaName: string; provider: string; transactionReference: string; amount: number; status: string; createdAt: string; paidAt: string | null }
+export type AdminRefundRow = { id: string; bookingCode: string; cinemaId: string; cinemaName: string; amount: number; reason: string; status: string; attemptCount: number; requestedAt: string; refundedAt: string | null }
+export type AdminUserRow = { id: string; fullName: string; email: string; phone: string | null; status: 'ACTIVE' | 'LOCKED'; roles: string[]; cinemaNames: string[]; createdAt: string }
+export type ReportSummary = { netRevenue: number; bookings: number; ticketsSold: number; occupancyPercent: number; pendingBookings: number; refundsNeedingAttention: number; daily: { date: string; netRevenue: number; ticketsSold: number }[] }
+export async function getAdminBookings(params: Record<string, string | undefined>) { return (await apiClient.get<AdminBookingRow[]>('/api/admin/bookings', { params })).data }
+export async function getAdminPayments(params: Record<string, string | undefined>) { return (await apiClient.get<AdminPaymentRow[]>('/api/admin/payments', { params })).data }
+export async function getAdminRefunds(params: Record<string, string | undefined>) { return (await apiClient.get<AdminRefundRow[]>('/api/admin/refunds', { params })).data }
+export async function retryRefund(id: string) { await apiClient.post(`/api/admin/refunds/${encodeURIComponent(id)}/retry`) }
+export async function getAdminUsers(q?: string) { return (await apiClient.get<AdminUserRow[]>('/api/admin/users', { params: { q } })).data }
+export async function setUserLocked(id: string, locked: boolean) { await apiClient.post(`/api/admin/users/${encodeURIComponent(id)}/${locked ? 'lock' : 'unlock'}`) }
+export async function getReportSummary(params: { from: string; to: string; cinemaId?: string }) { return (await apiClient.get<ReportSummary>('/api/admin/reports/summary', { params })).data }

@@ -111,6 +111,18 @@ class JdbcPaymentManagement implements PaymentManagement, PaymentRefundAccess {
     }
 
     @Override
+    public RefundablePayment lockSuccessfulForBooking(UUID bookingId) {
+        PaymentRow payment = jdbcTemplate.query("""
+                SELECT id,booking_id,provider,provider_transaction_id,amount,currency,status,paid_at,expires_at
+                FROM payments WHERE booking_id=? AND status='SUCCESS' FOR UPDATE
+                """, this::mapPayment, bookingId).stream().findFirst()
+                .orElseThrow(() -> ApplicationException.businessRule(
+                        "SHOWTIME_CANCELLATION_PAYMENT_MISSING", "Paid booking has no verified payment"));
+        return new RefundablePayment(payment.id(), payment.bookingId(), payment.provider(), payment.providerTransactionId(),
+                payment.amount(), payment.currency(), payment.status());
+    }
+
+    @Override
     @Transactional
     public void receiveWebhook(String providerName, String rawPayload, String signature) {
         PaymentProvider provider = provider(providerName);

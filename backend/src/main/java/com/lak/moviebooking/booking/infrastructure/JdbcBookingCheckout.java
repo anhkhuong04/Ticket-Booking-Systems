@@ -16,6 +16,8 @@ import com.lak.moviebooking.booking.application.BookingCheckoutCommand;
 import com.lak.moviebooking.booking.application.BookingItemView;
 import com.lak.moviebooking.booking.application.BookingView;
 import com.lak.moviebooking.booking.application.BookingPaymentAccess;
+import com.lak.moviebooking.booking.application.BookingRefundAccess;
+import com.lak.moviebooking.booking.application.CustomerRefundBooking;
 import com.lak.moviebooking.booking.application.PaymentBooking;
 import com.lak.moviebooking.common.application.error.ApplicationException;
 import com.lak.moviebooking.common.outbox.application.NewOutboxEvent;
@@ -32,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess {
+class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess, BookingRefundAccess {
 
     private static final String ACTIVE_HOLD = "ACTIVE";
     private static final String PENDING_PAYMENT = "PENDING_PAYMENT";
@@ -130,6 +132,18 @@ class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess {
     }
 
     @Override
+    public CustomerRefundBooking lockForCustomerRefund(UUID bookingId) {
+        return jdbcTemplate.query("""
+                SELECT booking.id,booking.user_id,booking.status,booking.total_amount,showtime.start_at
+                FROM bookings booking JOIN showtimes showtime ON showtime.id=booking.showtime_id
+                WHERE booking.id=? FOR UPDATE OF booking
+                """, (resultSet, rowNumber) -> new CustomerRefundBooking(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("user_id", UUID.class),
+                resultSet.getString("status"), resultSet.getLong("total_amount"), instant(resultSet, "start_at")), bookingId)
+                .stream().findFirst().orElseThrow(() -> ApplicationException.notFound("BOOKING_NOT_FOUND", "Booking was not found"));
+    }
+
+    @Override
     public PaymentBooking lockForPayment(String bookingCode, UUID userId, Instant now) {
         PaymentBooking booking = jdbcTemplate.query("""
                 SELECT id,user_id,booking_code,status,total_amount,hard_deadline
@@ -165,8 +179,41 @@ class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess {
 
     @Override
     public void markRefundPending(UUID bookingId, Instant now) {
-        jdbcTemplate.update("UPDATE bookings SET status='REFUND_PENDING',updated_at=? WHERE id=? AND status='PAYMENT_REVIEW'",
+        jdbcTemplate.update("UPDATE bookings SET status='REFUND_PENDING',updated_at=? WHERE id=? AND status IN ('PAYMENT_REVIEW','PAID')",
                 atUtc(now), bookingId);
+    }
+
+    @Override
+    public void markRefunded(UUID bookingId, Instant now) {
+        jdbcTemplate.update("UPDATE bookings SET status='REFUNDED',updated_at=? WHERE id=? AND status='REFUND_PENDING'",
+                atUtc(now), bookingId);
+    }
+
+    @Override
+    public List<UUID> findBookingIdsForShowtimeCancellation(UUID showtimeId) {
+        return jdbcTemplate.query("""
+                SELECT id FROM bookings WHERE showtime_id=?
+                AND status IN ('PENDING_PAYMENT','PAID','PAYMENT_REVIEW','REFUND_PENDING','REFUNDED')
+                ORDER BY id
+                """, (resultSet, rowNumber) -> resultSet.getObject("id", UUID.class), showtimeId);
+    }
+
+    @Override
+    public PaymentBooking findForShowtimeCancellation(UUID bookingId) {
+        return jdbcTemplate.query("""
+                SELECT id,user_id,booking_code,status,total_amount,hard_deadline FROM bookings WHERE id=?
+                """, (resultSet, rowNumber) -> new PaymentBooking(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("user_id", UUID.class),
+                resultSet.getString("booking_code"), resultSet.getString("status"), resultSet.getLong("total_amount"),
+                instant(resultSet, "hard_deadline")), bookingId).stream().findFirst()
+                .orElseThrow(() -> ApplicationException.notFound("BOOKING_NOT_FOUND", "Booking was not found"));
+    }
+
+    @Override
+    public boolean expirePendingForShowtimeCancellation(UUID bookingId, Instant now) {
+        return jdbcTemplate.update("""
+                UPDATE bookings SET status='EXPIRED',updated_at=? WHERE id=? AND status='PENDING_PAYMENT'
+                """, atUtc(now), bookingId) == 1;
     }
 
     private UUID claimIdempotency(UUID userId, BookingCheckoutCommand command, Instant now) {

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.lak.moviebooking.reservation.application.SeatAvailabilityEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.socket.WebSocketSession;

@@ -21,6 +21,7 @@ import com.lak.moviebooking.payment.application.PaymentCreateCommand;
 import com.lak.moviebooking.payment.application.PaymentManagement;
 import com.lak.moviebooking.payment.application.PaymentView;
 import com.lak.moviebooking.refund.application.RefundManagement;
+import com.lak.moviebooking.refund.application.CustomerRefundCommand;
 import com.lak.moviebooking.refund.application.RefundProvider;
 import com.lak.moviebooking.refund.application.RefundProviderException;
 import com.lak.moviebooking.refund.application.RefundProviderRequest;
@@ -29,6 +30,7 @@ import com.lak.moviebooking.reservation.application.SeatHoldCommand;
 import com.lak.moviebooking.reservation.application.SeatHoldManagement;
 import com.lak.moviebooking.reservation.application.SeatHoldView;
 import com.lak.moviebooking.reservation.infrastructure.SeatHoldManagementIT;
+import com.lak.moviebooking.showtime.application.ShowtimeManagement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,8 @@ class RefundWorkflowIT extends SeatHoldManagementIT {
     @Autowired private PaymentManagement payments;
     @Autowired private RefundManagement refunds;
     @Autowired private LatePaymentRefundOutboxHandler latePaymentHandler;
+    @Autowired private ShowtimeCancellationOutboxHandler showtimeCancellationHandler;
+    @Autowired private ShowtimeManagement showtimeManagement;
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -104,6 +108,55 @@ class RefundWorkflowIT extends SeatHoldManagementIT {
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM tickets WHERE booking_id=?", Integer.class, late.booking().id())).isZero();
     }
 
+    @Test
+    void cancelsShowtimeIdempotentlyRefundsPaidBookingsAndRestoresAnActiveVoucher() {
+        Fixture fixture = fixtureWithPrice();
+        String voucherCode = "CANCEL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        UUID voucherId = activeVoucher(voucherCode);
+        BookingView booking = booking(fixture, "showtime-cancel", voucherCode);
+        PaymentView payment = payments.create(fixture.firstUserId(), new PaymentCreateCommand(booking.bookingCode(), "sandbox"));
+        String raw = payload(payment.id(), "evt-cancel-" + UUID.randomUUID(), transaction(payment.id()), payment.amount(), Instant.now());
+        payments.receiveWebhook("sandbox", raw, sign(raw));
+
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM tickets WHERE booking_id=?", String.class, booking.id())).isEqualTo("VALID");
+        assertThat(showtimeManagement.cancelShowtime(UUID.randomUUID(), fixture.showtimeId()).status()).isEqualTo("CANCELLED");
+        OutboxEvent cancellation = new OutboxEvent(UUID.randomUUID(), "refund.showtime_cancellation_requested", "showtime",
+                fixture.showtimeId(), jdbcTemplate.queryForObject("SELECT payload FROM outbox_events WHERE event_type='refund.showtime_cancellation_requested' AND aggregate_id=?", String.class, fixture.showtimeId()), 0, Instant.now());
+
+        showtimeCancellationHandler.handle(cancellation);
+        showtimeCancellationHandler.handle(cancellation);
+
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM bookings WHERE id=?", String.class, booking.id())).isEqualTo("REFUND_PENDING");
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM tickets WHERE booking_id=?", String.class, booking.id())).isEqualTo("CANCELLED");
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM refunds WHERE booking_id=?", Integer.class, booking.id())).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT reason FROM refunds WHERE booking_id=?", String.class, booking.id())).isEqualTo("SHOWTIME_CANCELLED");
+        assertThat(jdbcTemplate.queryForObject("SELECT usage_count FROM vouchers WHERE id=?", Integer.class, voucherId)).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT restored_at IS NOT NULL FROM voucher_redemptions WHERE booking_id=?", Boolean.class, booking.id())).isTrue();
+
+        assertThat(refunds.processRequestedRefunds(Instant.now())).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM bookings WHERE id=?", String.class, booking.id())).isEqualTo("REFUNDED");
+    }
+
+    @Test
+    void customerRefundReplaysByIdempotencyKeyCancelsTicketAndReleasesSeats() {
+        Fixture fixture = fixtureWithPrice();
+        BookingView booking = booking(fixture, "customer-refund");
+        PaymentView payment = payments.create(fixture.firstUserId(), new PaymentCreateCommand(booking.bookingCode(), "sandbox"));
+        String raw = payload(payment.id(), "evt-customer-" + UUID.randomUUID(), transaction(payment.id()), payment.amount(), Instant.now());
+        payments.receiveWebhook("sandbox", raw, sign(raw));
+
+        CustomerRefundCommand request = new CustomerRefundCommand(fixture.firstUserId(), booking.id(), "customer-refund-key");
+        var created = refunds.requestCustomerRefund(request);
+        var replay = refunds.requestCustomerRefund(request);
+
+        assertThat(replay.id()).isEqualTo(created.id());
+        assertThat(created.amount()).isEqualTo(payment.amount());
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM tickets WHERE booking_id=?", String.class, booking.id())).isEqualTo("CANCELLED");
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM showtime_seats WHERE id=?", String.class, fixture.standardSeatId())).isEqualTo("AVAILABLE");
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM refunds WHERE booking_id=?", Integer.class, booking.id())).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT reason FROM refunds WHERE booking_id=?", String.class, booking.id())).isEqualTo("CUSTOMER_REQUEST");
+    }
+
     private LatePayment latePayment(String provider, String key) {
         Fixture fixture = fixtureWithPrice();
         BookingView booking = booking(fixture, key);
@@ -119,9 +172,24 @@ class RefundWorkflowIT extends SeatHoldManagementIT {
     }
 
     private BookingView booking(Fixture fixture, String key) {
+        return booking(fixture, key, null);
+    }
+
+    private BookingView booking(Fixture fixture, String key, String voucherCode) {
         SeatHoldView hold = seatHolds.create(fixture.firstUserId(), new SeatHoldCommand(
                 fixture.showtimeId(), List.of(fixture.standardSeatId()), "hold-" + key));
-        return bookings.checkout(fixture.firstUserId(), new BookingCheckoutCommand(hold.id(), "checkout-" + key));
+        return bookings.checkout(fixture.firstUserId(), new BookingCheckoutCommand(hold.id(), "checkout-" + key, voucherCode));
+    }
+
+    private UUID activeVoucher(String code) {
+        UUID id = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        jdbcTemplate.update("""
+                INSERT INTO vouchers (id,code,discount_type,discount_value,max_discount_amount,min_order_amount,usage_limit,usage_count,
+                                      per_user_limit,starts_at,ends_at,status,created_at,updated_at)
+                VALUES (?,?,'FIXED',10000,NULL,0,1,0,NULL,?,?, 'ACTIVE',?,?)
+                """, id, code, now.minusHours(1), now.plusDays(1), now, now);
+        return id;
     }
 
     private Fixture fixtureWithPrice() {

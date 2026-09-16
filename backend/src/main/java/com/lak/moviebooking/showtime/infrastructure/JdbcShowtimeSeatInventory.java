@@ -28,7 +28,7 @@ class JdbcShowtimeSeatInventory implements ShowtimeSeatInventory {
 
     @Override
     public List<ShowtimeSeatForHold> lockForHold(UUID showtimeId, List<UUID> requestedSeatIds, Instant now) {
-        if (!isOpen(showtimeId, now)) {
+        if (!lockOpenShowtime(showtimeId, now)) {
             throw ApplicationException.notFound("SHOWTIME_NOT_OPEN", "Showtime was not found or is no longer open");
         }
 
@@ -98,6 +98,9 @@ class JdbcShowtimeSeatInventory implements ShowtimeSeatInventory {
             UUID showtimeId, List<UUID> showtimeSeatIds, UUID holdId, Instant now) {
         if (showtimeSeatIds.isEmpty()) {
             throw ApplicationException.businessRule("EMPTY_SEAT_HOLD", "Seat hold does not contain any seats");
+        }
+        if (!lockOpenShowtime(showtimeId, now)) {
+            throw ApplicationException.notFound("SHOWTIME_NOT_OPEN", "Showtime was not found or is no longer open");
         }
         List<UUID> sortedIds = showtimeSeatIds.stream().sorted(Comparator.naturalOrder()).toList();
         List<Object> arguments = new ArrayList<>();
@@ -176,6 +179,22 @@ class JdbcShowtimeSeatInventory implements ShowtimeSeatInventory {
         return seatIds;
     }
 
+    @Override
+    public List<UUID> releaseSoldBookingForRefund(UUID bookingId, Instant now) {
+        List<UUID> seatIds = jdbcTemplate.query("""
+                SELECT id FROM showtime_seats WHERE current_booking_id=? AND status='SOLD'
+                ORDER BY id FOR UPDATE
+                """, (resultSet, rowNumber) -> resultSet.getObject("id", UUID.class), bookingId);
+        if (seatIds.isEmpty()) {
+            throw ApplicationException.businessRule("REFUND_SEATS_UNAVAILABLE", "Booking seats are no longer available for refund");
+        }
+        jdbcTemplate.update("""
+                UPDATE showtime_seats SET status='AVAILABLE',current_booking_id=NULL,version=version+1,updated_at=?
+                WHERE current_booking_id=? AND status='SOLD'
+                """, atUtc(now), bookingId);
+        return seatIds;
+    }
+
     private List<UUID> bookingSeatIds(UUID bookingId) {
         return jdbcTemplate.query("""
                 SELECT id FROM showtime_seats WHERE current_booking_id=? AND status='PAYMENT_PENDING'
@@ -183,13 +202,12 @@ class JdbcShowtimeSeatInventory implements ShowtimeSeatInventory {
                 """, (resultSet, rowNumber) -> resultSet.getObject("id", UUID.class), bookingId);
     }
 
-    private boolean isOpen(UUID showtimeId, Instant now) {
-        return Boolean.TRUE.equals(jdbcTemplate.queryForObject("""
-                SELECT EXISTS (
-                    SELECT 1 FROM showtimes
-                    WHERE id = ? AND status = 'SCHEDULED' AND sales_close_at > ?
-                )
-                """, Boolean.class, showtimeId, atUtc(now)));
+    private boolean lockOpenShowtime(UUID showtimeId, Instant now) {
+        return jdbcTemplate.query("""
+                SELECT status,sales_close_at FROM showtimes WHERE id=? FOR KEY SHARE
+                """, (resultSet, rowNumber) -> "SCHEDULED".equals(resultSet.getString("status"))
+                && resultSet.getObject("sales_close_at", OffsetDateTime.class).toInstant().isAfter(now), showtimeId)
+                .stream().findFirst().orElse(false);
     }
 
     private List<UUID> pairSeatIds(UUID showtimeId, Set<String> pairKeys) {

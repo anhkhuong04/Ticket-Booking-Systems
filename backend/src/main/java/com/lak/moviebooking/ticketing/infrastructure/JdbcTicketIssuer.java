@@ -62,6 +62,27 @@ class JdbcTicketIssuer implements TicketIssuer {
         return new TicketIssuance(ticket, Optional.of(rawQrToken));
     }
 
+    @Override
+    @Transactional
+    public void cancelForRefund(UUID bookingId) {
+        TicketView ticket = jdbcTemplate.query("""
+                SELECT id,booking_id,ticket_code,status,issued_at,used_at
+                FROM tickets WHERE booking_id=? FOR UPDATE
+                """, (resultSet, rowNumber) -> new TicketView(
+                resultSet.getObject("id", UUID.class), resultSet.getObject("booking_id", UUID.class),
+                resultSet.getString("ticket_code"), resultSet.getString("status"),
+                instant(resultSet, "issued_at"), nullableInstant(resultSet, "used_at")), bookingId)
+                .stream().findFirst().orElseThrow(() -> ApplicationException.businessRule(
+                        "REFUND_TICKET_MISSING", "Paid booking has no ticket"));
+        if ("CANCELLED".equals(ticket.status())) return;
+        if (!"VALID".equals(ticket.status())) {
+            throw ApplicationException.businessRule("REFUND_TICKET_USED", "Used ticket cannot be refunded");
+        }
+        Instant now = clock.instant();
+        jdbcTemplate.update("UPDATE tickets SET status='CANCELLED',updated_at=? WHERE id=? AND status='VALID'",
+                atUtc(now), ticket.id());
+    }
+
     private TicketView findByBookingId(UUID bookingId) {
         return jdbcTemplate.query("""
                 SELECT id,booking_id,ticket_code,status,issued_at,used_at

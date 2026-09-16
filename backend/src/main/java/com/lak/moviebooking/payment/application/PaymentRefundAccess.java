@@ -6,4 +6,6 @@ import java.util.UUID;
 public interface PaymentRefundAccess {
 
     RefundablePayment lockForRefund(UUID paymentId);
+
+    RefundablePayment lockSuccessfulForBooking(UUID bookingId);
 }

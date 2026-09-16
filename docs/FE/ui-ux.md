@@ -1057,7 +1057,7 @@ Tạo một điểm bắt đầu duy nhất sau đăng nhập để khách hàng
 
 1. **Việc cần xử lý:** booking chờ thanh toán/xác minh, refund đang xử lý hoặc cần hỗ trợ.
 2. **Vé sắp xem gần nhất:** suất chiếu tương lai gần nhất có ticket `VALID`.
-3. **Thao tác nhanh:** Vé của tôi, Lịch sử đặt vé, Hồ sơ.
+3. **Thao tác nhanh:** Vé của tôi, Đặt vé mới, Tìm rạp LAK. Chỉ hiển thị route đã có; Lịch sử đặt vé và Hồ sơ được bổ sung khi các màn hình đích hoàn tất.
 4. **Đặt vé gần đây:** tối đa 5 booking mới nhất, có trạng thái bằng text và badge.
 5. **Phim đang chiếu:** dữ liệu catalog thật và CTA dẫn về chi tiết phim.
 

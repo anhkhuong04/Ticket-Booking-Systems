@@ -1212,8 +1212,8 @@ Invalid/expired token có dedicated error state.
 │ ┌───────────────────────────────────────────┬────────────────────────────┐ │
 │ │ VÉ SẮP XEM                               │ THAO TÁC NHANH             │ │
 │ │ [Poster] Movie Title                     │ [Vé của tôi]               │ │
-│ │ 20:30 · 18/09 · LAK Cinema A             │ [Lịch sử đặt vé]           │ │
-│ │ Ghế A5, A6                    [Xem vé]   │ [Hồ sơ]                    │ │
+│ │ 20:30 · 18/09 · LAK Cinema A             │ [Đặt vé mới]               │ │
+│ │ Ghế A5, A6                    [Xem vé]   │ [Tìm rạp LAK]              │ │
 │ └───────────────────────────────────────────┴────────────────────────────┘ │
 │                                                                            │
 │ ĐẶT VÉ GẦN ĐÂY                                      [Xem tất cả]          │

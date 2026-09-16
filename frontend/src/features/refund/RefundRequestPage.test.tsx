@@ -27,6 +27,9 @@ const history = {
   seatLabels: ['A1'],
   ticketCode: 'TKT-123',
   ticketStatus: 'VALID' as const,
+  createdAt: '2029-12-01T10:00:00Z',
+  paymentStatus: 'SUCCESS',
+  refundStatus: null,
 }
 
 const booking = {

@@ -12,6 +12,9 @@ export type BookingHistoryItem = {
   seatLabels: string[]
   ticketCode: string | null
   ticketStatus: 'VALID' | 'USED' | 'CANCELLED' | null
+  createdAt: string
+  paymentStatus: string | null
+  refundStatus: 'REQUESTED' | 'REFUNDED' | 'REFUND_FAILED' | null
 }
 
 export type Ticket = {

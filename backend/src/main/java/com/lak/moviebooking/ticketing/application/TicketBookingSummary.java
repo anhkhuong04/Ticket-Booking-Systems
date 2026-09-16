@@ -8,7 +8,7 @@ import java.util.UUID;
 public record TicketBookingSummary(
         UUID bookingId, String bookingCode, String bookingStatus, String movieTitle, String posterUrl,
         String cinemaName, String auditoriumName, Instant startAt, List<String> seatLabels,
-        String ticketCode, String ticketStatus) {
+        String ticketCode, String ticketStatus, Instant createdAt, String paymentStatus, String refundStatus) {
     public TicketBookingSummary {
         seatLabels = List.copyOf(seatLabels);
     }

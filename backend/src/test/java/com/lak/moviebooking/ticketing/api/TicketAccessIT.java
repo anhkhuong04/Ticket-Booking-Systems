@@ -79,6 +79,9 @@ class TicketAccessIT extends SeatHoldManagementIT {
         assertThat(history).hasSize(1);
         assertThat(history.getFirst().bookingCode()).isEqualTo(issued.booking().bookingCode());
         assertThat(history.getFirst().ticketCode()).isEqualTo(issued.ticket().ticket().ticketCode());
+        assertThat(history.getFirst().createdAt()).isNotNull();
+        assertThat(history.getFirst().paymentStatus()).isNull();
+        assertThat(history.getFirst().refundStatus()).isNull();
     }
 
     @Test

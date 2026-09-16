@@ -15,11 +15,7 @@ import { PaymentResultPage } from './features/payment/PaymentResultPage'
 import { RefundRequestPage } from './features/refund/RefundRequestPage'
 import { MyTicketsPage, TicketDetailPage } from './features/ticketing/TicketPages'
 import { StaffScannerPage } from './features/ticketing/StaffScannerPage'
-
-function AccountPage() {
-  const { user, logout } = useAuth()
-  return <main className="min-h-screen bg-background p-6"><div className="mx-auto max-w-3xl rounded-xl border border-border bg-surface p-6"><h1 className="text-2xl font-bold">Tài khoản</h1><p className="mt-3 text-text-secondary">{user?.fullName} · {user?.email}</p><button onClick={() => void logout()} className="mt-6 min-h-11 rounded-lg bg-primary px-4 font-semibold text-white">Đăng xuất</button></div></main>
-}
+import { UserDashboardPage } from './features/account/UserDashboardPage'
 
 function RoleShell({ title }: { title: string }) {
   const { user, logout } = useAuth()
@@ -38,12 +34,12 @@ function App() {
       <Route path="/movies/:movieId" element={<MovieDetailPage />} />
       <Route path="/movies/:movieId/showtimes" element={<ShowtimeSelectionPage />} />
       <Route path="/cinemas" element={<CinemasPage />} />
+      <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<UserDashboardPage />} /></Route>
     </Route>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
-    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<AccountPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/tickets" element={<MyTicketsPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/tickets/:ticketCode" element={<TicketDetailPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} /></Route>

@@ -28,7 +28,9 @@ class JdbcTicketQuery implements TicketQuery {
         }
         TicketRow row = jdbcTemplate.query("""
                 SELECT ticket.id AS ticket_id,ticket.ticket_code,ticket.status AS ticket_status,ticket.issued_at,ticket.used_at,
-                       booking.id AS booking_id,booking.booking_code,booking.status AS booking_status,booking.user_id,
+                       booking.id AS booking_id,booking.booking_code,booking.status AS booking_status,booking.user_id,booking.created_at,
+                       (SELECT payment.status FROM payments payment WHERE payment.booking_id=booking.id ORDER BY payment.created_at DESC LIMIT 1) AS payment_status,
+                       (SELECT refund.status FROM refunds refund WHERE refund.booking_id=booking.id ORDER BY refund.created_at DESC LIMIT 1) AS refund_status,
                        movie.title AS movie_title,movie.poster_url,cinema.id AS cinema_id,cinema.name AS cinema_name,
                        auditorium.name AS auditorium_name,showtime.start_at
                 FROM tickets ticket
@@ -47,7 +49,9 @@ class JdbcTicketQuery implements TicketQuery {
     public List<TicketBookingSummary> findBookingsForOwner(UUID userId) {
         List<TicketRow> rows = jdbcTemplate.query("""
                 SELECT ticket.id AS ticket_id,ticket.ticket_code,ticket.status AS ticket_status,ticket.issued_at,ticket.used_at,
-                       booking.id AS booking_id,booking.booking_code,booking.status AS booking_status,booking.user_id,
+                       booking.id AS booking_id,booking.booking_code,booking.status AS booking_status,booking.user_id,booking.created_at,
+                       (SELECT payment.status FROM payments payment WHERE payment.booking_id=booking.id ORDER BY payment.created_at DESC LIMIT 1) AS payment_status,
+                       (SELECT refund.status FROM refunds refund WHERE refund.booking_id=booking.id ORDER BY refund.created_at DESC LIMIT 1) AS refund_status,
                        movie.title AS movie_title,movie.poster_url,cinema.id AS cinema_id,cinema.name AS cinema_name,
                        auditorium.name AS auditorium_name,showtime.start_at
                 FROM bookings booking
@@ -61,7 +65,7 @@ class JdbcTicketQuery implements TicketQuery {
                 """, this::mapRow, userId);
         return rows.stream().map(row -> new TicketBookingSummary(row.bookingId(), row.bookingCode(), row.bookingStatus(),
                 row.movieTitle(), row.posterUrl(), row.cinemaName(), row.auditoriumName(), row.startAt(), seats(row.bookingId()),
-                row.ticketCode(), row.ticketStatus())).toList();
+                row.ticketCode(), row.ticketStatus(), row.createdAt(), row.paymentStatus(), row.refundStatus())).toList();
     }
 
     private TicketLookup.TicketDetailView detail(TicketRow row) {
@@ -83,12 +87,14 @@ class JdbcTicketQuery implements TicketQuery {
         return new TicketRow(resultSet.getObject("ticket_id", UUID.class), resultSet.getString("ticket_code"),
                 resultSet.getString("ticket_status"), issuedAt == null ? null : issuedAt.toInstant(), usedAt == null ? null : usedAt.toInstant(),
                 resultSet.getObject("booking_id", UUID.class), resultSet.getString("booking_code"), resultSet.getString("booking_status"),
-                resultSet.getObject("user_id", UUID.class), resultSet.getString("movie_title"), resultSet.getString("poster_url"),
+                resultSet.getObject("user_id", UUID.class), resultSet.getObject("created_at", OffsetDateTime.class).toInstant(),
+                resultSet.getString("payment_status"), resultSet.getString("refund_status"), resultSet.getString("movie_title"), resultSet.getString("poster_url"),
                 resultSet.getObject("cinema_id", UUID.class), resultSet.getString("cinema_name"), resultSet.getString("auditorium_name"),
                 resultSet.getObject("start_at", OffsetDateTime.class).toInstant());
     }
 
     private record TicketRow(UUID ticketId, String ticketCode, String ticketStatus, Instant issuedAt, Instant usedAt,
-                             UUID bookingId, String bookingCode, String bookingStatus, UUID ownerId, String movieTitle,
+                             UUID bookingId, String bookingCode, String bookingStatus, UUID ownerId, Instant createdAt,
+                             String paymentStatus, String refundStatus, String movieTitle,
                              String posterUrl, UUID cinemaId, String cinemaName, String auditoriumName, Instant startAt) { }
 }

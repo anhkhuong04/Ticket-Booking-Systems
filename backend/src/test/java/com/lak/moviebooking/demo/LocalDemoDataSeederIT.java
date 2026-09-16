@@ -30,7 +30,7 @@ class LocalDemoDataSeederIT extends AbstractIntegrationTest {
         assertThat(counts()).isEqualTo(afterFirstRun);
         assertThat(afterFirstRun).satisfies(seedCounts -> {
             assertThat(seedCounts.movies()).isGreaterThanOrEqualTo(35);
-            assertThat(seedCounts.cinemas()).isGreaterThanOrEqualTo(3);
+            assertThat(seedCounts.cinemas()).isEqualTo(85);
             assertThat(seedCounts.auditoriums()).isGreaterThanOrEqualTo(9);
             assertThat(seedCounts.seats()).isGreaterThanOrEqualTo(720);
             assertThat(seedCounts.priceProfiles()).isGreaterThanOrEqualTo(1);
@@ -39,6 +39,9 @@ class LocalDemoDataSeederIT extends AbstractIntegrationTest {
             assertThat(seedCounts.showtimePrices()).isGreaterThanOrEqualTo(1_512);
             assertThat(seedCounts.showtimeSeats()).isGreaterThanOrEqualTo(40_320);
         });
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM cinemas WHERE name LIKE 'LAK %'", Integer.class)).isEqualTo(85);
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM cinemas WHERE name IN (?, ?, ?)", Integer.class,
+                "LAK Hùng Vương Plaza", "LAK Vincom Center Bà Triệu", "LAK Vĩnh Trung Plaza")).isEqualTo(3);
     }
 
     private SeedCounts counts() {

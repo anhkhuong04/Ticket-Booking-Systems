@@ -25,17 +25,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Seeds local-only, fictional cinema operations around verified CGV movie metadata. */
+/** Seeds local-only cinema catalog data and bounded booking fixtures around verified CGV metadata. */
 @Component
 @Profile("local")
 @ConditionalOnProperty(name = "app.demo-seed.enabled", havingValue = "true")
 class LocalDemoDataSeeder implements ApplicationRunner {
 
     private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final List<CinemaSeed> CINEMAS = List.of(
-            new CinemaSeed("district-1", "LAK Cinema Quận 1", "12 Nguyễn Huệ", "Hồ Chí Minh"),
-            new CinemaSeed("cau-giay", "LAK Cinema Cầu Giấy", "88 Trần Thái Tông", "Hà Nội"),
-            new CinemaSeed("hai-chau", "LAK Cinema Hải Châu", "25 Bạch Đằng", "Đà Nẵng"));
     private static final List<RoomSeed> ROOMS = List.of(
             new RoomSeed("room-1", "Phòng 1", "2D", 15),
             new RoomSeed("room-2", "Phòng 2", "3D", 20),
@@ -55,8 +51,9 @@ class LocalDemoDataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         List<MovieSeed> movies = loadMovies();
+        List<CinemaSeed> cinemas = loadCinemas();
         seedMovies(movies);
-        List<AuditoriumSeed> auditoriums = seedCinemasAndAuditoriums();
+        List<AuditoriumSeed> auditoriums = seedCinemasAndAuditoriums(cinemas);
         seedSystemPrices();
         seedShowtimes(movies.stream().filter(movie -> "NOW_SHOWING".equals(movie.status())).toList(), auditoriums);
     }
@@ -70,6 +67,18 @@ class LocalDemoDataSeeder implements ApplicationRunner {
                     .toList();
         } catch (IOException exception) {
             throw new IllegalStateException("Cannot load local CGV movie seed data", exception);
+        }
+    }
+
+    private List<CinemaSeed> loadCinemas() {
+        try (InputStream input = new ClassPathResource("demo/cgv-cinemas.json").getInputStream()) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8).lines()
+                    .map(String::trim)
+                    .filter(line -> line.startsWith("{"))
+                    .map(this::parseCinema)
+                    .toList();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Cannot load local CGV cinema seed data", exception);
         }
     }
 
@@ -92,6 +101,21 @@ class LocalDemoDataSeeder implements ApplicationRunner {
             throw new IllegalStateException("Invalid local movie seed field: " + field);
         }
         return Integer.parseInt(matcher.group(1));
+    }
+
+    private CinemaSeed parseCinema(String line) {
+        String branch = string(line, "branch");
+        String city = string(line, "city");
+        return new CinemaSeed(string(line, "key"), "LAK " + branch, "LAK " + branch + ", " + city, city,
+                booleanValue(line, "operational"));
+    }
+
+    private boolean booleanValue(String line, String field) {
+        Matcher matcher = Pattern.compile("\\\"" + Pattern.quote(field) + "\\\":(true|false)").matcher(line);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Invalid local cinema seed field: " + field);
+        }
+        return Boolean.parseBoolean(matcher.group(1));
     }
 
     private List<String> strings(String line, String field) {
@@ -123,15 +147,18 @@ class LocalDemoDataSeeder implements ApplicationRunner {
         }
     }
 
-    private List<AuditoriumSeed> seedCinemasAndAuditoriums() {
+    private List<AuditoriumSeed> seedCinemasAndAuditoriums(List<CinemaSeed> cinemas) {
         OffsetDateTime now = now();
         List<AuditoriumSeed> auditoriums = new java.util.ArrayList<>();
-        for (CinemaSeed cinema : CINEMAS) {
+        for (CinemaSeed cinema : cinemas) {
             UUID cinemaId = id("cinema:" + cinema.key());
             jdbcTemplate.update("""
                     INSERT INTO cinemas (id,name,address,city,timezone,status,created_at,updated_at)
                     VALUES (?,?,?,?,?,'ACTIVE',?,?) ON CONFLICT (id) DO NOTHING
                     """, cinemaId, cinema.name(), cinema.address(), cinema.city(), VIETNAM.getId(), now, now);
+            if (!cinema.operational()) {
+                continue;
+            }
             for (RoomSeed room : ROOMS) {
                 UUID auditoriumId = id("auditorium:" + cinema.key() + ":" + room.key());
                 jdbcTemplate.update("""
@@ -261,7 +288,7 @@ class LocalDemoDataSeeder implements ApplicationRunner {
     }
 
     private record MovieSeed(String title, int durationMinutes, String ageRating, LocalDate releaseDate, String status, List<String> genres) { }
-    private record CinemaSeed(String key, String name, String address, String city) { }
+    private record CinemaSeed(String key, String name, String address, String city, boolean operational) { }
     private record RoomSeed(String key, String name, String format, int cleanupMinutes) { }
     private record AuditoriumSeed(UUID id, int cleanupMinutes) { }
     private record PriceSeed(String seatType, long amount) { }

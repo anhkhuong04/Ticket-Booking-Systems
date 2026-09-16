@@ -1,10 +1,17 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { ChevronDown, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import footerBanner from '../../assets/logo-banners/footbanner.png'
 import logo from '../../assets/logo-banners/logo.png'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm font-semibold ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`
+
+function dashboardPath(roles: string[]): string {
+  if (roles.includes('SUPER_ADMIN') || roles.includes('CINEMA_MANAGER')) return '/admin'
+  if (roles.includes('TICKET_STAFF')) return '/staff'
+  return '/me'
+}
 
 type FooterItemProps = { label: string; to?: string }
 
@@ -55,8 +62,17 @@ export function CustomerShell() {
           {user ? (
             <>
               <NavLink className={linkClass} to="/me/tickets">Vé của tôi</NavLink>
-              <NavLink className={linkClass} to="/me">Tài khoản</NavLink>
-              <button onClick={() => void logout()} className="min-h-11 text-sm font-semibold text-primary">Đăng xuất</button>
+              <details className="group relative">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-sm font-semibold text-text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+                  <span className="grid size-7 place-items-center rounded-full bg-primary text-white" aria-hidden="true"><UserRound size={17} /></span>
+                  <span>Tài khoản</span>
+                  <ChevronDown className="transition-transform group-open:rotate-180" size={17} aria-hidden="true" />
+                </summary>
+                <div className="absolute right-0 top-full z-20 mt-2 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-lg shadow-slate-900/10">
+                  <Link className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-text-primary hover:bg-primary-soft" to={dashboardPath(user.roles)}><LayoutDashboard size={18} aria-hidden="true" />Dashboard</Link>
+                  <button onClick={() => void logout()} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-text-primary hover:bg-primary-soft"><LogOut size={18} aria-hidden="true" />Đăng xuất</button>
+                </div>
+              </details>
             </>
           ) : (
             <Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover" to="/login">Đăng nhập</Link>

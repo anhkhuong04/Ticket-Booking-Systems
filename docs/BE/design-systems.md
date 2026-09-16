@@ -443,8 +443,13 @@ erDiagram
 | `GET` | `/api/movies/{id}` |
 | `GET` | `/api/genres` |
 | `GET` | `/api/cinemas` |
+| `GET` | `/api/showtimes/availability` |
 | `GET` | `/api/showtimes` |
 | `GET` | `/api/showtimes/{id}/seats` |
+
+`GET /api/showtimes/availability` requires `movieId` and returns only cinemas and Vietnam-local
+dates that still have a `SCHEDULED` showtime open for sale. The quick-booking UI uses this response
+to avoid presenting cinema/date combinations that cannot be purchased.
 
 `GET /api/showtimes` requires `movieId` and ISO `date` (`YYYY-MM-DD`), accepts optional
 `cinemaId`, and returns only `SCHEDULED` showtimes whose `sales_close_at` is later than the

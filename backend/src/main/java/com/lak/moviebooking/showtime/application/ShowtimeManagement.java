@@ -20,6 +20,7 @@ public interface ShowtimeManagement {
     List<AdminShowtimeView> findAdminShowtimes(UUID cinemaId, LocalDate date);
     UUID findShowtimeCinemaId(UUID showtimeId);
     AdminShowtimeView cancelShowtime(UUID actorId, UUID showtimeId);
+    ShowtimeAvailabilityView findAvailability(UUID movieId, Instant now);
     List<ShowtimeView> findOpenShowtimes(UUID movieId, LocalDate date, UUID cinemaId, Instant now);
     ShowtimeSeatMap findSeatMap(UUID showtimeId, Instant now);
 }

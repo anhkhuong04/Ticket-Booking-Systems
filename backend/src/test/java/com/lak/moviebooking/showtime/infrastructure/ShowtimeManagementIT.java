@@ -16,6 +16,7 @@ import com.lak.moviebooking.showtime.application.PriceProfileCommand;
 import com.lak.moviebooking.showtime.application.PriceRuleCommand;
 import com.lak.moviebooking.showtime.application.ShowtimeCreateCommand;
 import com.lak.moviebooking.showtime.application.ShowtimeManagement;
+import com.lak.moviebooking.showtime.application.ShowtimeCinemaAvailability;
 import com.lak.moviebooking.showtime.application.ShowtimeView;
 import com.lak.moviebooking.support.integration.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,10 @@ class ShowtimeManagementIT extends AbstractIntegrationTest {
                 .containsExactly("AVAILABLE", "BLOCKED");
         assertThat(showtimeManagement.findOpenShowtimes(fixture.movieId(), startAt.atZone(VIETNAM).toLocalDate(), null, Instant.now()))
                 .extracting(ShowtimeView::id).contains(showtime.id());
+        assertThat(showtimeManagement.findAvailability(fixture.movieId(), Instant.now()).cinemas())
+                .extracting(ShowtimeCinemaAvailability::cinemaId).containsExactly(fixture.cinemaId());
+        assertThat(showtimeManagement.findAvailability(fixture.movieId(), Instant.now()).cinemas().getFirst().dates())
+                .containsExactly(startAt.atZone(VIETNAM).toLocalDate());
         assertThat(showtimeManagement.findSeatMap(showtime.id(), Instant.now()).seats()).hasSize(2);
 
         assertThatThrownBy(() -> showtimeManagement.createShowtime(actorId, new ShowtimeCreateCommand(
@@ -67,6 +72,7 @@ class ShowtimeManagementIT extends AbstractIntegrationTest {
                 .isEqualTo("SHOWTIME_CONFLICT");
 
         assertThat(showtimeManagement.cancelShowtime(actorId, showtime.id()).status()).isEqualTo("CANCELLED");
+        assertThat(showtimeManagement.findAvailability(fixture.movieId(), Instant.now()).cinemas()).isEmpty();
         ShowtimeView protectedShowtime = showtimeManagement.createShowtime(actorId, new ShowtimeCreateCommand(
                 fixture.movieId(), fixture.auditoriumId(), startAt, Map.of("STANDARD", 100_000L, "VIP", 180_000L)));
         jdbcTemplate.update("UPDATE showtime_seats SET status='SOLD' WHERE showtime_id=? AND status='AVAILABLE'", protectedShowtime.id());

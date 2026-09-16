@@ -13,6 +13,18 @@ export type Showtime = {
   prices: Record<string, number>
 }
 
+export type ShowtimeCinemaAvailability = {
+  cinemaId: string
+  cinemaName: string
+  cinemaAddress: string
+  dates: string[]
+}
+
+export type ShowtimeAvailability = {
+  movieId: string
+  cinemas: ShowtimeCinemaAvailability[]
+}
+
 export type ShowtimeSeat = {
   id: string
   rowLabel: string
@@ -38,6 +50,13 @@ export type ShowtimeSeatMap = {
 export async function getOpenShowtimes(movieId: string, date: string, cinemaId?: string): Promise<Showtime[]> {
   const response = await apiClient.get<Showtime[]>('/api/showtimes', {
     params: { movieId, date, cinemaId: cinemaId || undefined },
+  })
+  return response.data
+}
+
+export async function getShowtimeAvailability(movieId: string): Promise<ShowtimeAvailability> {
+  const response = await apiClient.get<ShowtimeAvailability>('/api/showtimes/availability', {
+    params: { movieId },
   })
   return response.data
 }

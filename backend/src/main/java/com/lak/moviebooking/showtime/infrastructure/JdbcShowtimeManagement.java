@@ -10,6 +10,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,8 @@ import com.lak.moviebooking.showtime.application.PriceRuleCommand;
 import com.lak.moviebooking.showtime.application.PriceRuleView;
 import com.lak.moviebooking.showtime.application.ShowtimeCreateCommand;
 import com.lak.moviebooking.showtime.application.AdminShowtimeView;
+import com.lak.moviebooking.showtime.application.ShowtimeAvailabilityView;
+import com.lak.moviebooking.showtime.application.ShowtimeCinemaAvailability;
 import com.lak.moviebooking.showtime.application.ShowtimeManagement;
 import com.lak.moviebooking.showtime.application.ShowtimeSeatMap;
 import com.lak.moviebooking.showtime.application.ShowtimeSeatView;
@@ -114,6 +118,29 @@ class JdbcShowtimeManagement implements ShowtimeManagement {
         auditLogWriter.record(actorId,"SHOWTIME_CANCELLED","showtime",showtimeId,Map.of("workflow","REQUESTED"));
         return new AdminShowtimeView(showtime.id(),showtime.cinemaId(),showtime.cinemaName(),showtime.auditoriumId(),showtime.auditoriumName(),showtime.movieId(),showtime.movieTitle(),showtime.startAt(),showtime.endAt(),showtime.salesCloseAt(),"CANCELLED",false);
     }
+    @Override public ShowtimeAvailabilityView findAvailability(UUID movieId, Instant now) {
+        List<AvailabilityRow> rows = jdbcTemplate.query(
+                "SELECT c.id cinema_id,c.name cinema_name,c.address cinema_address,s.start_at "
+                        + "FROM showtimes s JOIN auditoriums a ON a.id=s.auditorium_id "
+                        + "JOIN cinemas c ON c.id=a.cinema_id "
+                        + "WHERE s.movie_id=? AND s.status='SCHEDULED' AND s.sales_close_at>? "
+                        + "ORDER BY c.name,c.id,s.start_at",
+                (rs, row) -> new AvailabilityRow(
+                        rs.getObject("cinema_id", UUID.class), rs.getString("cinema_name"),
+                        rs.getString("cinema_address"), instant(rs, "start_at")),
+                movieId, atUtc(now));
+        Map<UUID, AvailabilityAccumulator> grouped = new LinkedHashMap<>();
+        for (AvailabilityRow row : rows) {
+            AvailabilityAccumulator cinema = grouped.computeIfAbsent(row.cinemaId(), ignored ->
+                    new AvailabilityAccumulator(row.cinemaName(), row.cinemaAddress(), new LinkedHashSet<>()));
+            cinema.dates().add(row.startAt().atZone(DISPLAY_ZONE).toLocalDate());
+        }
+        List<ShowtimeCinemaAvailability> cinemas = grouped.entrySet().stream()
+                .map(entry -> new ShowtimeCinemaAvailability(entry.getKey(), entry.getValue().name(),
+                        entry.getValue().address(), List.copyOf(entry.getValue().dates())))
+                .toList();
+        return new ShowtimeAvailabilityView(movieId, cinemas);
+    }
     @Override public List<ShowtimeView> findOpenShowtimes(UUID movieId, LocalDate date, UUID cinemaId, Instant now) {
         Instant start=date.atStartOfDay(DISPLAY_ZONE).toInstant(); Instant end=date.plusDays(1).atStartOfDay(DISPLAY_ZONE).toInstant();
         String sql = "SELECT s.id,s.movie_id,c.id cinema_id,c.name cinema_name,c.address cinema_address,"
@@ -150,5 +177,7 @@ class JdbcShowtimeManagement implements ShowtimeManagement {
     private Map<String,Long> amounts(Map<String,ResolvedPrice> prices){return prices.values().stream().collect(java.util.stream.Collectors.toMap(ResolvedPrice::seatType,ResolvedPrice::amount));}
     private AdminShowtimeView adminShowtime(ResultSet rs)throws SQLException{return new AdminShowtimeView(rs.getObject("id",UUID.class),rs.getObject("cinema_id",UUID.class),rs.getString("cinema_name"),rs.getObject("auditorium_id",UUID.class),rs.getString("auditorium_name"),rs.getObject("movie_id",UUID.class),rs.getString("movie_title"),instant(rs,"start_at"),instant(rs,"end_at"),instant(rs,"sales_close_at"),rs.getString("status"),rs.getBoolean("cancellation_blocked"));} private void validateProfile(PriceProfileCommand command){if(blank(command.name())||command.effectiveFrom()==null||!PROFILE_STATUSES.contains(command.status())||(command.effectiveTo()!=null&&command.effectiveTo().isBefore(command.effectiveFrom())))throw ApplicationException.businessRule("INVALID_PRICE_PROFILE","Price profile data is invalid");} private void validateRule(PriceRuleCommand command){if(!DAY_TYPES.contains(command.dayType())||command.amount()<=0||command.priority()<0||(command.timeFrom()==null)!=(command.timeTo()==null)||(command.timeFrom()!=null&&!command.timeFrom().isBefore(command.timeTo())))throw ApplicationException.businessRule("INVALID_PRICE_RULE","Price rule data is invalid");} private Instant instant(ResultSet rs,String column)throws SQLException{return rs.getObject(column,OffsetDateTime.class).toInstant();} private OffsetDateTime atUtc(Instant value){return value.atOffset(ZoneOffset.UTC);} private OffsetDateTime now(){return clock.instant().atOffset(ZoneOffset.UTC);} private boolean blank(String v){return v==null||v.isBlank();} private String nullable(String v){return blank(v)?null:v.trim();}
     private record Profile(UUID id,UUID cinemaId){} private record Rule(long amount){} private record ResolvedPrice(String seatType,long amount,String source){}
+    private record AvailabilityRow(UUID cinemaId, String cinemaName, String cinemaAddress, Instant startAt){}
+    private record AvailabilityAccumulator(String name, String address, LinkedHashSet<LocalDate> dates){}
     private record ShowtimeCancellationPayload(UUID showtimeId,Instant cancelledAt){}
 }

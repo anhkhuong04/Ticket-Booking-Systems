@@ -99,7 +99,10 @@ export function MyTicketsPage() {
                     </div>
                     <p className="mt-3 text-sm text-text-secondary">{item.cinemaName} · {item.auditoriumName}</p>
                     <p className="mt-1 text-sm text-text-secondary">Ghế {item.seatLabels.join(', ')} · Booking {item.bookingCode}</p>
-                    {item.ticketCode && <Link to={`/tickets/${encodeURIComponent(item.ticketCode)}`} className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-primary px-4 font-semibold text-primary">Xem vé</Link>}
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {item.ticketCode && <Link to={`/tickets/${encodeURIComponent(item.ticketCode)}`} className="inline-flex min-h-11 items-center rounded-lg border border-primary px-4 font-semibold text-primary">Xem vé</Link>}
+                      {item.bookingStatus === 'PAID' && item.ticketStatus === 'VALID' && <Link to={`/me/bookings/${encodeURIComponent(item.bookingId)}/refund`} className="inline-flex min-h-11 items-center rounded-lg border border-primary px-4 font-semibold text-primary">Yêu cầu hoàn vé</Link>}
+                    </div>
                   </div>
                 </article>
               </li>

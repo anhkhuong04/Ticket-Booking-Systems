@@ -11,6 +11,7 @@ import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage
 import { SeatSelectionPage } from './features/reservation/SeatSelectionPage'
 import { CheckoutPage } from './features/booking/CheckoutPage'
 import { PaymentResultPage } from './features/payment/PaymentResultPage'
+import { RefundRequestPage } from './features/refund/RefundRequestPage'
 import { MyTicketsPage, TicketDetailPage } from './features/ticketing/TicketPages'
 import { StaffScannerPage } from './features/ticketing/StaffScannerPage'
 
@@ -47,6 +48,7 @@ function App() {
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/showtimes/:showtimeId/seats" element={<SeatSelectionPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/checkout/:bookingId" element={<CheckoutPage />} /></Route>
     <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/payments/:paymentId/result" element={<PaymentResultPage />} /></Route>
+    <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/bookings/:bookingId/refund" element={<RefundRequestPage />} /></Route>
     <Route element={<ProtectedRoute roles={['TICKET_STAFF', 'SUPER_ADMIN']} />}><Route path="/staff" element={<RoleShell title="Khu vực nhân viên" />} /></Route>
     <Route element={<ProtectedRoute roles={['CINEMA_MANAGER', 'SUPER_ADMIN']} />}>
       <Route element={<AdminShell />}>

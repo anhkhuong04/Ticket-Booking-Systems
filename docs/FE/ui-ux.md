@@ -1,6 +1,6 @@
 # LAK — UI/UX Specification
 
-> **Phiên bản:** 2.0  
+> **Phiên bản:** 2.1<br>
 > **Phạm vi:** Website khách hàng, trang quản trị và giao diện quét vé  
 > **Phong cách:** Clean, professional, light cinema  
 > **Mục tiêu sử dụng:** Source of truth cho thiết kế UI/UX, frontend implementation, coding agent và stakeholder review  
@@ -165,10 +165,11 @@ Home
 ├── Cinemas
 │
 └── Account
+    ├── Dashboard
     ├── My Tickets
     ├── Booking History
-    ├── Booking Detail
-    ├── Refund Request
+    │   └── Booking Detail
+    │       └── Refund Request
     └── Profile
 ```
 
@@ -232,6 +233,8 @@ Routes dưới đây là contract frontend đề xuất cho implementation.
 | C13 | Forgot Password | `/forgot-password` | No | P1 |
 | C14 | Reset Password | `/reset-password` | No | P1 |
 | C15 | Profile | `/me/profile` | Yes | P1 |
+| C16 | User Dashboard | `/me` | Yes (`CUSTOMER`) | P1 |
+| C17 | Booking History | `/me/bookings` | Yes (`CUSTOMER`) | P1 |
 
 ---
 
@@ -422,6 +425,8 @@ Yêu cầu:
 - sticky nhẹ khi scroll;
 - chi nhánh đang chọn hiển thị rõ;
 - CTA hoặc navigation active không dùng quá nhiều accent màu.
+- sau khi đăng nhập, `Tài khoản` mở menu gồm `Dashboard` và `Đăng xuất`;
+- `Dashboard` dẫn đến `/me` với `CUSTOMER`, `/staff` với `TICKET_STAFF`, và `/admin` với `CINEMA_MANAGER` hoặc `SUPER_ADMIN`.
 
 Mobile:
 
@@ -1042,6 +1047,82 @@ Không dùng toast làm phương thức duy nhất để báo validation error.
 
 ---
 
+# C16 — User Dashboard
+
+## Objective
+
+Tạo một điểm bắt đầu duy nhất sau đăng nhập để khách hàng thấy việc cần làm trước, sau đó mới đến lịch sử và nội dung khám phá. Dashboard không thay thế My Tickets, Booking History hoặc Profile; nó chỉ tổng hợp và dẫn đến các màn chi tiết.
+
+## Information hierarchy
+
+1. **Việc cần xử lý:** booking chờ thanh toán/xác minh, refund đang xử lý hoặc cần hỗ trợ.
+2. **Vé sắp xem gần nhất:** suất chiếu tương lai gần nhất có ticket `VALID`.
+3. **Thao tác nhanh:** Vé của tôi, Lịch sử đặt vé, Hồ sơ.
+4. **Đặt vé gần đây:** tối đa 5 booking mới nhất, có trạng thái bằng text và badge.
+5. **Phim đang chiếu:** dữ liệu catalog thật và CTA dẫn về chi tiết phim.
+
+## State and data rules
+
+- `GET /api/me/bookings` là nguồn dữ liệu cho booking/ticket summary và chỉ trả dữ liệu của tài khoản đang xác thực.
+- Không tải hoặc lưu QR ở Dashboard. QR chỉ được lấy khi khách mở chi tiết vé.
+- Sắp xếp, trạng thái booking, payment, refund và ticket phải dựa trên dữ liệu backend; client không tự suy diễn một giao dịch đã thành công.
+- Nếu read model hiện tại chưa trả payment/refund summary cần thiết, ẩn block tương ứng hoặc hiển thị CTA đến Booking Detail; không ghép trạng thái từ nhiều request không có contract.
+- `REFUND_FAILED` dùng copy an toàn như `Cần hỗ trợ xử lý hoàn tiền`, không yêu cầu khách tạo refund mới.
+- Phim đang chiếu dùng catalog public; lỗi catalog không được làm mất các block tài khoản đã tải thành công.
+
+## Loading, empty and error
+
+- Dùng skeleton theo từng block; block nào tải xong hiển thị độc lập.
+- Không có việc cần xử lý: ẩn cảnh báo và hiển thị thông điệp ngắn `Bạn không có giao dịch cần xử lý`.
+- Không có vé sắp xem: hiển thị CTA `Khám phá phim`.
+- Lỗi dữ liệu tài khoản: hiển thị lỗi inline và `Thử lại`; không hiển thị dữ liệu cũ như dữ liệu vừa cập nhật nếu không có nhãn.
+
+## Responsive and accessibility
+
+- Desktop dùng main column cho việc cần xử lý/vé sắp xem và side column cho thao tác nhanh; mobile xếp một cột theo đúng thứ tự ưu tiên.
+- Mỗi card có heading hoặc accessible name; icon không đứng một mình để truyền đạt trạng thái.
+- Toàn bộ CTA có vùng bấm tối thiểu 44×44px và focus visible.
+
+## API readiness
+
+`GET /api/me/bookings` hiện đủ cho vé sắp xem và danh sách booking cơ bản. Block payment/refund cần xử lý chỉ được triển khai đầy đủ khi read model bổ sung payment/refund summary an toàn cho owner; không gọi API admin hoặc suy trạng thái từ redirect phía client.
+
+---
+
+# C17 — Booking History
+
+## Objective
+
+Cho phép khách hàng tra cứu toàn bộ booking của chính mình, kể cả booking chưa phát hành vé, đã hết hạn, bị hủy hoặc đang hoàn tiền. Màn này khác My Tickets: My Tickets tổ chức theo ticket và hành trình xem phim, còn Booking History tổ chức theo booking và trạng thái giao dịch.
+
+## Filters and list content
+
+- tab trạng thái: `Tất cả`, `Cần xử lý`, `Hoàn tất`, `Đã hủy / hết hạn`;
+- khoảng thời gian theo ngày tạo booking, hiển thị theo `Asia/Ho_Chi_Minh`;
+- tìm theo booking code; tìm kiếm phải được trim và debounce;
+- mỗi item gồm booking code, phim, rạp/phòng, suất chiếu, ghế, thời điểm đặt và booking status;
+- payment/refund/ticket status chỉ hiển thị khi API trả về authoritative summary;
+- CTA chính là `Xem chi tiết`, dẫn đến `/me/bookings/:code` (implementation có thể dùng opaque booking id nếu API contract chọn id làm path key).
+
+## Data, pagination and security
+
+- Dùng `GET /api/me/bookings`; API chỉ trả booking thuộc tài khoản hiện tại và không chứa QR payload.
+- Filter/sort/pagination nên do server xử lý khi dữ liệu vượt một trang; không tải toàn bộ lịch sử rồi giả lập pagination ở client.
+- URL giữ filter có thể chia sẻ trong cùng phiên, nhưng không đưa email, payment reference hoặc dữ liệu nhạy cảm vào query string.
+- Refresh/retry chỉ đọc lại danh sách, không tạo lại booking hoặc payment.
+
+Read model hiện tại chưa có `createdAt`, payment/refund summary và pagination metadata. Bản triển khai tối thiểu có thể hiển thị danh sách theo dữ liệu hiện có; để đáp ứng đầy đủ filter, phân trang và trạng thái trong spec, backend cần mở rộng `GET /api/me/bookings` theo hướng backward-compatible hoặc cung cấp endpoint history riêng owner-only.
+
+## States
+
+- Loading giữ ổn định chiều cao danh sách bằng skeleton.
+- Empty toàn bộ: `Bạn chưa có booking nào` + CTA `Khám phá phim`.
+- Empty theo bộ lọc: `Không có booking khớp bộ lọc` + action `Xóa bộ lọc`.
+- Lỗi tải: giữ filter hiện tại, hiển thị lỗi inline và `Thử lại`.
+- Trên mobile, item chuyển thành card; không ẩn booking status hoặc action cần xử lý.
+
+---
+
 # 12. Staff Screen Specifications
 
 # S01 — QR Scanner
@@ -1145,20 +1226,70 @@ Rules:
 
 ---
 
-# A01 — Dashboard
+# A01 — Admin Dashboard
 
-Widgets:
+## Access and cinema scope
 
-- revenue today;
-- tickets sold;
-- pending bookings;
-- refunds needing attention;
-- occupancy rate;
-- revenue chart;
-- top movies;
-- top showtimes.
+| Role | Quyền xem Dashboard | Cinema filter |
+|---|---|---|
+| `SUPER_ADMIN` | Toàn hệ thống | `Tất cả chi nhánh` hoặc một chi nhánh |
+| `CINEMA_MANAGER` | Chỉ các chi nhánh được gán | Khóa vào một chi nhánh nếu chỉ có một; nếu có nhiều chỉ được chọn trong scope |
+| `TICKET_STAFF` | Không | Không hiển thị route/menu Admin Dashboard |
+| `CUSTOMER` | Không | Dùng User Dashboard `/me` |
 
-Không hiển thị chart nếu metric đơn giản có thể trình bày bằng KPI card.
+Frontend guard chỉ hỗ trợ UX. Backend phải kiểm tra role và cinema scope cho mọi request, kể cả khi người dùng sửa `cinemaId` trên URL.
+
+## Filters
+
+- Date range mặc định `Hôm nay`; preset gồm `Hôm nay`, `7 ngày`, `30 ngày`, `Tháng này`, `Tùy chọn`.
+- `from` và `to` là ngày lịch bao gồm cả hai đầu theo `Asia/Ho_Chi_Minh`; range tối đa 366 ngày theo API hiện tại.
+- Cinema filter tuân theo bảng quyền phía trên; lựa chọn `Tất cả` luôn có nghĩa là toàn bộ **scope được phép**, không phải toàn hệ thống với manager.
+- Khi đổi filter, giữ dữ liệu cũ có nhãn `Đang cập nhật` cho đến khi dữ liệu mới thành công; chống stale response khi đổi filter liên tiếp.
+- Filter áp dụng thống nhất cho KPI theo kỳ, biểu đồ và bảng xếp hạng. Các operational backlog phải ghi rõ `Hiện tại` và chỉ theo cinema scope, không bị hiểu là số phát sinh trong date range.
+
+## Metric definitions
+
+| Metric | Cách tính và mốc thời gian |
+|---|---|
+| Doanh thu ròng | Tổng payment đã xác minh thành công theo `paidAt` trong kỳ trừ refund `REFUNDED` theo `refundedAt` trong kỳ; VND số nguyên. Không tính initiated/pending/failed hoặc refund chưa hoàn tất. |
+| Booking thành công | Số `booking_id` duy nhất có payment được backend xác minh `SUCCESS` theo `paidAt` trong kỳ. Booking đã hoàn tiền vẫn thuộc số giao dịch thành công lịch sử; không tính retry/payment trùng. |
+| Vé đã bán | Số ticket `VALID` hoặc `USED` gắn với giao dịch đã chốt trong kỳ; ticket `CANCELLED` không được tính. |
+| Tỷ lệ lấp đầy | `Số ghế SOLD của các suất bắt đầu trong kỳ / tổng ghế bán được của chính các suất đó × 100`; mẫu số 0 hiển thị `0%` và không chia cho 0. |
+| Booking cần xử lý | Snapshot hiện tại của booking `PENDING_PAYMENT`, `PAYMENT_REVIEW` hoặc `REFUND_PENDING` trong cinema scope; gắn nhãn `Hiện tại`. |
+| Refund cần chú ý | Snapshot hiện tại của refund `REFUND_FAILED` cần manual review trong cinema scope; gắn nhãn `Hiện tại`. |
+
+Nếu read model backend dùng một mốc thời gian khác, API contract và tài liệu này phải được cập nhật cùng nhau. Frontend không tự tính lại KPI từ danh sách phân trang.
+
+## Widgets and drill-down
+
+- KPI cards: doanh thu ròng, booking thành công, vé đã bán, tỷ lệ lấp đầy, booking cần xử lý, refund cần chú ý.
+- Revenue chart dùng cùng date/cinema filter; mỗi điểm có label ngày theo `Asia/Ho_Chi_Minh`, doanh thu ròng và số vé.
+- Top movies xếp theo doanh thu ròng, có số vé làm chỉ số phụ.
+- Top showtimes xếp theo doanh thu ròng hoặc tỷ lệ lấp đầy và phải ghi rõ tiêu chí đang dùng.
+- Click KPI/list dẫn tới màn quản trị tương ứng và mang theo filter hợp lệ; Dashboard không cung cấp thao tác sửa trực tiếp dữ liệu giao dịch.
+- Không dựng Top Movies/Top Showtimes bằng cách cộng dữ liệu từ bảng phân trang. Nếu API chưa trả read model tương ứng, ẩn widget với trạng thái `Chưa có dữ liệu` thay vì mock.
+
+## Loading, empty, error and reconciliation
+
+- Dùng skeleton đúng kích thước KPI/chart để tránh layout shift; refresh giữ dữ liệu cũ và báo `Đang cập nhật`.
+- Không có giao dịch trong kỳ: KPI bằng 0, chart hiển thị zero/empty state và vẫn giữ filter.
+- Lỗi tải một widget không làm trắng toàn Dashboard; hiển thị lỗi inline và retry cho vùng lỗi.
+- Hiển thị `Cập nhật lúc HH:mm` từ thời điểm nhận response; không giả làm realtime nếu không có cơ chế đồng bộ.
+- Tổng theo ngày của revenue chart phải reconciliation với KPI doanh thu ròng trong cùng filter; nếu lệch, UI hiển thị trạng thái dữ liệu chưa đồng bộ và không che giấu sai lệch.
+
+## API readiness
+
+`GET /api/admin/reports/summary` hiện hỗ trợ `from`, `to`, `cinemaId`, các KPI tổng và chuỗi ngày. Để hoàn thiện toàn bộ Dashboard theo spec, reporting read model cần:
+
+- thống nhất mốc thời gian `paidAt`/`refundedAt` và bảo đảm `daily.netRevenue` reconciliation với `netRevenue`;
+- thống nhất trường `bookings` theo định nghĩa booking thành công và đếm distinct để retry không làm tăng số liệu;
+- tách KPI theo kỳ khỏi operational backlog hiện tại;
+- trả `asOf` để hiển thị thời điểm cập nhật;
+- bổ sung Top Movies và Top Showtimes hoặc endpoint reporting riêng có cùng scope/filter.
+
+Những phần chưa có contract API phải hiển thị unavailable/empty state và không được tính từ các API danh sách phân trang.
+
+Không hiển thị chart nếu metric đơn giản có thể trình bày rõ hơn bằng KPI card hoặc danh sách.
 
 ---
 
@@ -1327,6 +1458,8 @@ Lock/unlock phải có confirmation.
 
 # A12 — Reports
 
+Reports là màn phân tích chi tiết và breakdown; Admin Dashboard chỉ là snapshot vận hành và lối tắt drill-down. Hai màn phải dùng cùng định nghĩa metric, timezone và cinema scope.
+
 Core report dimensions:
 
 - time;
@@ -1341,6 +1474,8 @@ Core metrics:
 - occupancy.
 
 Timezone hiển thị theo `Asia/Ho_Chi_Minh`.
+
+`SUPER_ADMIN` có thể báo cáo toàn hệ thống hoặc từng chi nhánh; `CINEMA_MANAGER` chỉ thấy dữ liệu trong các chi nhánh được gán. Không hiển thị tùy chọn ngoài scope rồi chờ backend từ chối.
 
 ---
 
@@ -2015,6 +2150,7 @@ Các màn role-based không chỉ ẩn menu; backend vẫn phải enforce permis
 
 ## Level 2 — Operations
 
+- User Dashboard và Booking History;
 - Admin Dashboard;
 - Movie Management;
 - Cinema/Room Management;
@@ -2177,6 +2313,8 @@ C05 Seat Selection
 C06 Checkout
 C07 Payment Result
 C08 My Tickets
+C16 User Dashboard
+C17 Booking History
 S01 QR Scanner
 A01 Dashboard
 A05 Showtime Management

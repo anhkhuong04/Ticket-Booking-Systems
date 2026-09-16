@@ -1,6 +1,6 @@
 # LAK — Wireframes Specification
 
-> **Phiên bản:** 1.0  
+> **Phiên bản:** 1.1<br>
 > **Phạm vi:** Customer website, Staff scanner và Admin console  
 > **Tài liệu liên quan:** `docs/overview.md`, `docs/BE/design-systems.md`, `docs/FE/ui-ux.md`, `task.md`
 > **Mục tiêu:** Cung cấp layout contract đủ rõ để stakeholder hình dung sản phẩm và coding agent triển khai UI mà không phải tự suy diễn bố cục chính.
@@ -136,6 +136,17 @@ Hai cột:
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
+Khi đã đăng nhập, `Tài khoản` là trigger có icon và chevron. Menu chỉ gồm:
+
+```text
+┌──────────────────┐
+│ Dashboard        │
+│ Đăng xuất        │
+└──────────────────┘
+```
+
+Dashboard route theo role: customer `/me`, ticket staff `/staff`, manager/admin `/admin`.
+
 ### Rules
 
 - Header sticky nhẹ.
@@ -220,6 +231,17 @@ C08 My Tickets
 C09 Booking Detail
    ↓
 C10 Refund Request
+```
+
+Account flow:
+
+```text
+C16 User Dashboard
+   ├── C08 My Tickets
+   ├── C17 Booking History
+   │      └── C09 Booking Detail
+   │             └── C10 Refund Request
+   └── C15 Profile
 ```
 
 Auth có thể xen vào trước bước protected:
@@ -1170,6 +1192,134 @@ Invalid/expired token có dedicated error state.
 
 ---
 
+# 20.1. C16 — User Dashboard
+
+## Desktop
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Header                                            Vé của tôi  Tài khoản ▼ │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Xin chào, Nguyễn Văn A                                                   │
+│ Tổng quan các vé và giao dịch của bạn                                     │
+│                                                                            │
+│ ┌────────────────────────────────────────────────────────────────────────┐ │
+│ │ CẦN XỬ LÝ                                                             │ │
+│ │ Booking LAK-AB12 · Đang xác minh thanh toán             [Xem chi tiết]│ │
+│ │ Refund LAK-CD34 · Đang xử lý hoàn tiền                  [Theo dõi]    │ │
+│ └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│ ┌───────────────────────────────────────────┬────────────────────────────┐ │
+│ │ VÉ SẮP XEM                               │ THAO TÁC NHANH             │ │
+│ │ [Poster] Movie Title                     │ [Vé của tôi]               │ │
+│ │ 20:30 · 18/09 · LAK Cinema A             │ [Lịch sử đặt vé]           │ │
+│ │ Ghế A5, A6                    [Xem vé]   │ [Hồ sơ]                    │ │
+│ └───────────────────────────────────────────┴────────────────────────────┘ │
+│                                                                            │
+│ ĐẶT VÉ GẦN ĐÂY                                      [Xem tất cả]          │
+│ [LAK-AB12 · Movie · 18/09 · PAID] [Xem chi tiết]                          │
+│ [LAK-CD34 · Movie · 11/09 · REFUND_PENDING] [Xem chi tiết]                │
+│                                                                            │
+│ PHIM ĐANG CHIẾU                                      [Khám phá phim]       │
+│ [Movie card] [Movie card] [Movie card] [Movie card]                       │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+Nếu không có việc cần xử lý, block đầu tiên thu gọn thành một dòng xác nhận trung tính. Vé sắp xem chỉ hiển thị ticket `VALID` có `startAt` gần nhất trong tương lai.
+
+## Mobile
+
+```text
+┌──────────────────────────────┐
+│ LAK                Account ▼ │
+├──────────────────────────────┤
+│ Xin chào, Nguyễn Văn A       │
+│                              │
+│ CẦN XỬ LÝ                    │
+│ [Status card] [Xem chi tiết] │
+│                              │
+│ VÉ SẮP XEM                   │
+│ [Poster] Movie Title         │
+│          20:30 · 18/09       │
+│          [Xem vé]            │
+│                              │
+│ THAO TÁC NHANH               │
+│ [Vé] [Lịch sử] [Hồ sơ]       │
+│                              │
+│ ĐẶT VÉ GẦN ĐÂY               │
+│ [Booking card]               │
+│                              │
+│ PHIM ĐANG CHIẾU              │
+│ [Horizontal movie cards →]   │
+└──────────────────────────────┘
+```
+
+Mobile giữ thứ tự: cần xử lý → vé sắp xem → thao tác nhanh → lịch sử gần đây → phim. Không đưa carousel tự chạy vào Dashboard.
+
+## Loading / empty / error
+
+- Skeleton độc lập cho account summary và catalog.
+- Lỗi catalog không che dữ liệu booking; lỗi booking không che navigation account.
+- Không có vé sắp xem hiển thị `[Khám phá phim]`.
+- Không có booking hiển thị `[Bạn chưa có booking nào]` và không render danh sách rỗng giả.
+
+---
+
+# 20.2. C17 — Booking History
+
+## Desktop
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│ LỊCH SỬ ĐẶT VÉ                                                             │
+│                                                                            │
+│ [Tất cả] [Cần xử lý] [Hoàn tất] [Đã hủy / hết hạn]                        │
+│ [Từ ngày] [Đến ngày] [Booking code________________] [Xóa bộ lọc]           │
+│                                                                            │
+│ ┌────────────────────────────────────────────────────────────────────────┐ │
+│ │ LAK-AB12   Movie Title                              [PAID]             │ │
+│ │ 20:30 · 18/09/2026 · LAK Cinema A · Room 2                            │ │
+│ │ Ghế A5, A6 · Đặt lúc 10:15 10/09/2026              [Xem chi tiết]    │ │
+│ └────────────────────────────────────────────────────────────────────────┘ │
+│ ┌────────────────────────────────────────────────────────────────────────┐ │
+│ │ LAK-CD34   Movie Title                    [REFUND_PENDING]             │ │
+│ │ ...                                                  [Xem chi tiết]    │ │
+│ └────────────────────────────────────────────────────────────────────────┘ │
+│                                                    [←] Trang 1 / N [→]    │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Mobile
+
+```text
+┌──────────────────────────────┐
+│ ← Lịch sử đặt vé             │
+├──────────────────────────────┤
+│ [Trạng thái ▼] [Bộ lọc]      │
+│ [Booking code____________]   │
+├──────────────────────────────┤
+│ LAK-AB12            [PAID]   │
+│ Movie Title                  │
+│ 20:30 · 18/09                │
+│ Cinema A · A5, A6            │
+│ [Xem chi tiết]               │
+├──────────────────────────────┤
+│ ...                          │
+└──────────────────────────────┘
+```
+
+Date range trên mobile đặt trong filter drawer. Badge luôn đi kèm text; không ẩn trạng thái để tiết kiệm chiều ngang.
+
+## State contract
+
+- Danh sách dùng endpoint owner-only và không chứa QR payload.
+- `Xem chi tiết` là action chính duy nhất trên mỗi item; refund tiếp tục ở Booking Detail.
+- Empty toàn bộ: `Bạn chưa có booking nào` + `[Khám phá phim]`.
+- Empty theo filter: `Không có booking khớp bộ lọc` + `[Xóa bộ lọc]`.
+- Lỗi giữ nguyên filter và hiển thị `[Thử lại]`; retry không tạo booking/payment mới.
+
+---
+
 # 21. S01 — QR Scanner
 
 ## Mobile
@@ -1280,23 +1430,71 @@ Invalid/expired token có dedicated error state.
 
 ```text
 ┌──────────────────┬─────────────────────────────────────────────────────────┐
-│ Sidebar          │ Dashboard                                               │
-│                  │                                                         │
-│ Dashboard        │ [Doanh thu] [Vé bán] [Pending booking] [Refund alert] │
-│ Phim             │                                                         │
-│ Rạp & phòng      │ ┌────────────────────────────────────────────────────┐ │
-│ Suất chiếu       │ │                 REVENUE CHART                      │ │
-│ Bảng giá         │ └────────────────────────────────────────────────────┘ │
-│ Booking          │                                                         │
-│ Thanh toán       │ ┌────────────────────────┐ ┌─────────────────────────┐ │
-│ Hoàn tiền        │ │ Top Movies             │ │ Top Showtimes           │ │
-│ Voucher          │ │ ...                    │ │ ...                     │ │
-│ Người dùng       │ └────────────────────────┘ └─────────────────────────┘ │
-│ Báo cáo          │                                                         │
+│ Sidebar          │ Dashboard                         Cập nhật lúc 10:30    │
+│                  │ [Hôm nay ▼] [01/09 — 16/09] [Tất cả chi nhánh ▼]       │
+│ Dashboard        │                                                         │
+│ Phim             │ [Doanh thu ròng] [Booking thành công] [Vé] [Lấp đầy] │
+│ Rạp & phòng      │                                                         │
+│ Suất chiếu       │ ┌────────────────────────────────────────────────────┐ │
+│ Bảng giá         │ │ DOANH THU RÒNG & VÉ THEO NGÀY                    │ │
+│ Booking          │ │                         Revenue / Tickets          │ │
+│ Thanh toán       │ └────────────────────────────────────────────────────┘ │
+│ Hoàn tiền        │                                                         │
+│ Voucher          │ [Booking cần xử lý · Hiện tại] [Refund lỗi · Hiện tại]│
+│ Người dùng       │                                                         │
+│ Báo cáo          │ ┌────────────────────────┐ ┌─────────────────────────┐ │
+│                  │ │ Top Movies             │ │ Top Showtimes           │ │
+│                  │ │ Revenue · Tickets      │ │ Revenue · Occupancy     │ │
+│                  │ └────────────────────────┘ └─────────────────────────┘ │
 └──────────────────┴─────────────────────────────────────────────────────────┘
 ```
 
-KPI card chỉ hiển thị metric có ý nghĩa.
+## Filter and scope behavior
+
+- Date preset: `Hôm nay`, `7 ngày`, `30 ngày`, `Tháng này`, `Tùy chọn`; ngày theo `Asia/Ho_Chi_Minh`, inclusive, tối đa 366 ngày.
+- `SUPER_ADMIN` thấy `Tất cả chi nhánh`; `CINEMA_MANAGER` chỉ thấy chi nhánh được gán. Một manager có đúng một chi nhánh thì filter bị khóa và vẫn hiển thị tên scope.
+- Filter áp dụng đồng thời cho KPI theo kỳ, chart và top lists. Hai card vận hành có nhãn `Hiện tại` để phân biệt snapshot backlog với metric theo kỳ.
+- Đổi filter giữ số liệu cũ ở trạng thái `Đang cập nhật`; response cũ đến muộn không được ghi đè filter mới.
+
+## Metric presentation
+
+- `Doanh thu ròng`: payment thành công trong kỳ trừ refund đã hoàn tất trong kỳ.
+- `Booking thành công`: số booking duy nhất có payment `SUCCESS` theo `paidAt`; retry/payment trùng không làm tăng số liệu.
+- `Vé bán`: ticket `VALID`/`USED`; không tính `CANCELLED`.
+- `Lấp đầy`: ghế `SOLD` / tổng ghế của các suất bắt đầu trong kỳ; không có ghế hiển thị `0%`.
+- `Booking cần xử lý`: snapshot `PENDING_PAYMENT`, `PAYMENT_REVIEW`, `REFUND_PENDING` trong scope.
+- `Refund lỗi`: snapshot `REFUND_FAILED` cần manual review trong scope.
+
+KPI card chỉ hiển thị metric có ý nghĩa. Frontend không cộng dữ liệu từ bảng phân trang để tạo KPI hoặc top lists; widget chưa có read model backend phải hiển thị empty state, không mock.
+
+## Mobile / tablet
+
+```text
+┌──────────────────────────────┐
+│ Dashboard                    │
+│ [Thời gian ▼] [Chi nhánh ▼]  │
+├──────────────────────────────┤
+│ [Doanh thu] [Booking thành công]│
+│ [Vé bán]    [Lấp đầy]        │
+│                              │
+│ [Booking cần xử lý · Hiện tại]│
+│ [Refund lỗi · Hiện tại]      │
+│                              │
+│ REVENUE CHART (scroll/fit)   │
+│                              │
+│ Top Movies                   │
+│ Top Showtimes                │
+└──────────────────────────────┘
+```
+
+Tablet/mobile xếp chart và top lists một cột. KPI quan trọng không bị ẩn; filter có thể vào drawer nhưng scope hiện tại luôn nhìn thấy.
+
+## Loading / empty / error / reconciliation
+
+- Skeleton giữ kích thước card và chart; từng widget retry độc lập.
+- Không có giao dịch: hiển thị số 0 và chart empty state, không bỏ toàn bộ Dashboard.
+- Hiển thị `Cập nhật lúc HH:mm`; Dashboard không tự nhận là realtime.
+- Tổng các điểm revenue theo ngày phải bằng KPI doanh thu ròng trong cùng filter. Nếu backend báo dữ liệu chưa đồng bộ, hiển thị cảnh báo và CTA `Thử lại`/`Xem báo cáo`.
 
 ---
 
@@ -1580,6 +1778,8 @@ Lock user:
 └──────────────────┴─────────────────────────────────────────────────────────┘
 ```
 
+Reports dùng cùng định nghĩa metric, timezone và cinema scope với Dashboard. Đây là màn breakdown chi tiết theo thời gian/phim/rạp; Dashboard chỉ cung cấp snapshot và drill-down.
+
 ---
 
 # 36. Shared Loading Patterns
@@ -1850,6 +2050,13 @@ Cần trả lời:
 
 - Có tìm kiếm/lọc được dữ liệu vận hành nhanh không?
 - Destructive action có đủ cảnh báo không?
+- Có phân biệt KPI theo kỳ với backlog hiện tại không?
+- Cinema filter có phản ánh đúng scope của role không?
+
+## Customer account
+
+- Dashboard có đưa việc cần xử lý và vé sắp xem lên trước nội dung khám phá không?
+- Booking History có khác biệt rõ với My Tickets và giữ trạng thái giao dịch quan trọng trên mobile không?
 
 ---
 
@@ -1870,6 +2077,8 @@ C05 Seat Selection
 C06 Checkout
 C07 Payment Result
 C08 My Tickets
+C16 User Dashboard
+C17 Booking History
 ```
 
 ## Phase 2 — Operations

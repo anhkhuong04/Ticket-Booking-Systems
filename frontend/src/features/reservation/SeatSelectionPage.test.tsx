@@ -111,7 +111,7 @@ describe('SeatSelectionPage', () => {
       expiresAt: '2026-01-01T10:05:00Z', hardExpiresAt: '2026-01-01T10:05:00Z', showtimeSeatIds: ['standard-1'],
     })
     mockedCheckout.mockResolvedValue({
-      id: 'booking-1', bookingCode: 'LAK-1', holdId: 'hold-1', showtimeId: 'showtime-1', movieTitle: 'Demo Movie',
+      id: 'booking-1', bookingCode: 'LAK-1', holdId: 'hold-1', showtimeId: 'showtime-1', movieTitle: 'Demo Movie', ageRating: 'T16',
       cinemaName: 'LAK Demo', auditoriumName: 'Room 1', startAt: '2026-01-01T10:00:00Z', status: 'PENDING_PAYMENT',
       subtotal: 90_000, voucherCode: 'SAVE50', discountAmount: 20_000, serviceFee: 0, totalAmount: 70_000,
       serverNow: new Date().toISOString(), paymentDeadline: new Date(Date.now() + 120_000).toISOString(),

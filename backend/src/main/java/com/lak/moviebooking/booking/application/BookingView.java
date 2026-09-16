@@ -10,6 +10,7 @@ public record BookingView(
         UUID holdId,
         UUID showtimeId,
         String movieTitle,
+        String ageRating,
         String cinemaName,
         String auditoriumName,
         Instant startAt,

@@ -1045,6 +1045,13 @@ Validation message đặt gần input.
 
 Không dùng toast làm phương thức duy nhất để báo validation error.
 
+## Profile và hóa đơn khách hàng
+
+- `/me/profile` cho khách cập nhật họ tên, số điện thoại và ngày sinh; email chỉ đọc, thay đổi email và mật khẩu đi theo luồng xác thực riêng. Ngày sinh là tùy chọn và được dùng để cảnh báo phân loại phim.
+- `/me/billing` lưu thông tin người nhận hóa đơn mặc định cho cá nhân hoặc doanh nghiệp, tách khỏi hồ sơ. Thông tin mặc định không phải hóa đơn đã phát hành.
+- Tại checkout, khách có thể gửi yêu cầu hóa đơn cho booking đang chờ thanh toán; snapshot theo booking, không thay đổi sau khi rời trạng thái chờ thanh toán.
+- Trang phim và checkout hiển thị phân loại tuổi. Checkout tính tuổi từ ngày sinh tự khai tại ngày chiếu theo `Asia/Ho_Chi_Minh`. Nếu không đủ tuổi hoặc chưa có ngày sinh, cảnh báo rõ bằng text nhưng vẫn cho phép mua; nhắc kiểm tra từng người xem khi mua hộ.
+
 ---
 
 # C16 — User Dashboard
@@ -1057,7 +1064,7 @@ Tạo một điểm bắt đầu duy nhất sau đăng nhập để khách hàng
 
 1. **Việc cần xử lý:** booking chờ thanh toán/xác minh, refund đang xử lý hoặc cần hỗ trợ.
 2. **Vé sắp xem gần nhất:** suất chiếu tương lai gần nhất có ticket `VALID`.
-3. **Thao tác nhanh:** Vé của tôi, Đặt vé mới, Tìm rạp LAK. Chỉ hiển thị route đã có; Lịch sử đặt vé và Hồ sơ được bổ sung khi các màn hình đích hoàn tất.
+3. **Thao tác nhanh:** Vé của tôi, Thông tin cá nhân, Thông tin hóa đơn, Đặt vé mới, Tìm rạp LAK. Lịch sử đặt vé được bổ sung khi màn hình đích hoàn tất.
 4. **Đặt vé gần đây:** tối đa 5 booking mới nhất, có trạng thái bằng text và badge.
 5. **Phim đang chiếu:** dữ liệu catalog thật và CTA dẫn về chi tiết phim.
 

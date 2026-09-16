@@ -38,6 +38,7 @@ const booking = {
   holdId: 'hold-1',
   showtimeId: 'showtime-1',
   movieTitle: 'Phim thử nghiệm',
+  ageRating: 'T16',
   cinemaName: 'LAK Quận 1',
   auditoriumName: 'Phòng 1',
   startAt: '2030-01-01T10:00:00Z',

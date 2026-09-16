@@ -309,7 +309,8 @@ VALID → CANCELLED
 
 | Entity | Trường chính | Ghi chú |
 |---|---|---|
-| `users` | `id`, `email`, `phone`, `password_hash`, `full_name`, `status` | Email và phone unique khi có giá trị |
+| `users` | `id`, `email`, `phone`, `password_hash`, `full_name`, `birth_date`, `status` | Email và phone unique khi có giá trị; ngày sinh chỉ hỗ trợ cảnh báo độ tuổi |
+| `customer_billing_preferences` | `user_id`, `recipient_type`, `recipient_name`, `tax_code`, `address`, `email` | Mẫu thông tin hóa đơn riêng của khách, không phải hóa đơn đã phát hành |
 | `roles` | `id`, `code`, `name` | Role code unique |
 | `user_roles` | `user_id`, `role_id` | Primary key ghép |
 | `staff_cinema_assignments` | `user_id`, `cinema_id` | Giới hạn quyền theo chi nhánh |
@@ -434,6 +435,10 @@ erDiagram
 | `POST` | `/api/auth/logout` |
 | `POST` | `/api/auth/forgot-password` |
 | `POST` | `/api/auth/reset-password` |
+
+`GET/PUT /api/me/profile` chỉ đọc/cập nhật họ tên, số điện thoại và ngày sinh của tài khoản đang xác thực. Email và mật khẩu dùng luồng xác thực riêng. `GET/PUT /api/me/billing-preferences` lưu mẫu người nhận hóa đơn của chính tài khoản.
+
+`GET/PUT /api/bookings/{bookingCode}/billing` chỉ cho chủ booking đọc hoặc ghi yêu cầu hóa đơn. Ghi/cập nhật chỉ được phép khi booking còn `PENDING_PAYMENT`; dữ liệu được snapshot theo booking và không tự phát hành hóa đơn. Checkout hiển thị cảnh báo tuổi từ `ageRating` của phim và ngày sinh tự khai, tính theo ngày chiếu tại `Asia/Ho_Chi_Minh`; cảnh báo không chặn thanh toán.
 
 ### Catalog và showtime
 

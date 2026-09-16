@@ -13,6 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.lak.moviebooking.booking.application.BookingCheckout;
+import com.lak.moviebooking.booking.application.BookingBilling;
+import com.lak.moviebooking.booking.application.BookingBillingRequest;
 import com.lak.moviebooking.booking.application.BookingCheckoutCommand;
 import com.lak.moviebooking.booking.application.BookingView;
 import com.lak.moviebooking.common.application.error.ApplicationException;
@@ -34,10 +36,37 @@ class BookingCheckoutIT extends SeatHoldManagementIT {
     private BookingCheckout bookingCheckout;
 
     @Autowired
+    private BookingBilling bookingBilling;
+
+    @Autowired
     private TicketIssuer ticketIssuer;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void billingRequestBelongsToOwnerAndCannotChangeAfterPaymentStateChanges() {
+        Fixture fixture = fixtureWithPrices();
+        SeatHoldView hold = seatHoldManagement.create(fixture.firstUserId(), new SeatHoldCommand(
+                fixture.showtimeId(), List.of(fixture.standardSeatId()), "hold-for-billing"));
+        BookingView booking = bookingCheckout.checkout(fixture.firstUserId(), new BookingCheckoutCommand(hold.id(), "checkout-billing"));
+        BookingBillingRequest details = new BookingBillingRequest("BUSINESS", "LAK Customer", "1234567890", "HCMC", "billing@example.com");
+
+        assertThat(bookingBilling.request(fixture.firstUserId(), booking.bookingCode(), details)).isEqualTo(details);
+        assertThatThrownBy(() -> bookingBilling.find(fixture.secondUserId(), booking.bookingCode()))
+                .isInstanceOf(ApplicationException.class);
+        jdbcTemplate.update("UPDATE bookings SET payment_deadline=? WHERE id=?", OffsetDateTime.parse("2000-01-01T00:00:00Z"), booking.id());
+        assertThatThrownBy(() -> bookingBilling.request(fixture.firstUserId(), booking.bookingCode(), details))
+                .isInstanceOf(ApplicationException.class)
+                .extracting(error -> ((ApplicationException) error).code())
+                .isEqualTo("BILLING_REQUEST_CLOSED");
+        jdbcTemplate.update("UPDATE bookings SET status='PAID' WHERE id=?", booking.id());
+        assertThatThrownBy(() -> bookingBilling.request(fixture.firstUserId(), booking.bookingCode(), details))
+                .isInstanceOf(ApplicationException.class)
+                .extracting(error -> ((ApplicationException) error).code())
+                .isEqualTo("BILLING_REQUEST_CLOSED");
+        assertThat(bookingBilling.find(fixture.firstUserId(), booking.bookingCode())).isEqualTo(details);
+    }
 
     @Test
     void checkoutSnapshotsServerPricesConsumesHoldAndReplaysIdempotently() {
@@ -50,6 +79,7 @@ class BookingCheckoutIT extends SeatHoldManagementIT {
 
         assertThat(replay.id()).isEqualTo(created.id());
         assertThat(created.status()).isEqualTo("PENDING_PAYMENT");
+        assertThat(created.ageRating()).isNotBlank();
         assertThat(created.subtotal()).isEqualTo(90_000L);
         assertThat(created.totalAmount()).isEqualTo(90_000L);
         assertThat(created.paymentDeadline()).isEqualTo(hold.expiresAt());

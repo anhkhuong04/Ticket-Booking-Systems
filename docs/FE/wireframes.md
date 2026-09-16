@@ -1168,6 +1168,8 @@ Invalid/expired token có dedicated error state.
 
 # 20. C15 — Profile
 
+Hồ sơ có họ tên, email chỉ đọc, số điện thoại và ngày sinh tùy chọn. Liên kết riêng tới `/me/billing` để lưu thông tin người nhận hóa đơn mặc định; đổi mật khẩu theo luồng xác thực riêng. Checkout cho phép ghi nhận yêu cầu hóa đơn theo từng booking trước hạn thanh toán. Cảnh báo phân loại tuổi trên trang phim và checkout chỉ mang tính hướng dẫn, không khóa CTA.
+
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │ Hồ sơ                                                       │
@@ -1181,12 +1183,13 @@ Invalid/expired token có dedicated error state.
 │ Số điện thoại                                              │
 │ [09xxxxxxxx____________________________]                    │
 │                                                             │
+│ Ngày sinh (tùy chọn)                                       │
+│ [dd/mm/yyyy___________________________]                     │
+│ Dùng để cảnh báo phân loại phim.                            │
+│                                                             │
 │ [Lưu thay đổi]                                              │
 ├──────────────────────────────────────────────────────────────┤
-│ Đổi mật khẩu                                                │
-│ [Mật khẩu hiện tại____________________]                     │
-│ [Mật khẩu mới_________________________]                     │
-│ [Đổi mật khẩu]                                              │
+│ [Thông tin hóa đơn]        [Đặt lại mật khẩu]               │
 └──────────────────────────────────────────────────────────────┘
 ```
 

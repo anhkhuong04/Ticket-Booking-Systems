@@ -1,5 +1,5 @@
 import { isAxiosError } from 'axios'
-import { CircleAlert, Film, MapPin, Ticket } from 'lucide-react'
+import { CircleAlert, Film, MapPin, ReceiptText, Ticket, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
@@ -113,7 +113,7 @@ export function UserDashboardPage() {
 
           <aside className="rounded-xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="quick-actions-title">
             <h2 id="quick-actions-title" className="text-xl font-semibold text-text-primary">Thao tác nhanh</h2>
-            <nav className="mt-4 grid gap-3" aria-label="Thao tác tài khoản"><QuickAction to="/me/tickets" icon={<Ticket size={20} aria-hidden="true" />} label="Vé của tôi" /><QuickAction to="/movies" icon={<Film size={20} aria-hidden="true" />} label="Đặt vé mới" /><QuickAction to="/cinemas" icon={<MapPin size={20} aria-hidden="true" />} label="Tìm rạp LAK" /></nav>
+            <nav className="mt-4 grid gap-3" aria-label="Thao tác tài khoản"><QuickAction to="/me/tickets" icon={<Ticket size={20} aria-hidden="true" />} label="Vé của tôi" /><QuickAction to="/me/profile" icon={<UserRound size={20} aria-hidden="true" />} label="Thông tin cá nhân" /><QuickAction to="/me/billing" icon={<ReceiptText size={20} aria-hidden="true" />} label="Thông tin hóa đơn" /><QuickAction to="/movies" icon={<Film size={20} aria-hidden="true" />} label="Đặt vé mới" /><QuickAction to="/cinemas" icon={<MapPin size={20} aria-hidden="true" />} label="Tìm rạp LAK" /></nav>
           </aside>
         </section>
 

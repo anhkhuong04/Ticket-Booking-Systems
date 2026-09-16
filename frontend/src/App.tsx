@@ -16,6 +16,8 @@ import { RefundRequestPage } from './features/refund/RefundRequestPage'
 import { MyTicketsPage, TicketDetailPage } from './features/ticketing/TicketPages'
 import { StaffScannerPage } from './features/ticketing/StaffScannerPage'
 import { UserDashboardPage } from './features/account/UserDashboardPage'
+import { CustomerProfilePage } from './features/account/CustomerProfilePage'
+import { BillingPreferencesPage } from './features/account/BillingPreferencesPage'
 
 function RoleShell({ title }: { title: string }) {
   const { user, logout } = useAuth()
@@ -35,6 +37,8 @@ function App() {
       <Route path="/movies/:movieId/showtimes" element={<ShowtimeSelectionPage />} />
       <Route path="/cinemas" element={<CinemasPage />} />
       <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<UserDashboardPage />} /></Route>
+      <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/profile" element={<CustomerProfilePage />} /></Route>
+      <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/billing" element={<BillingPreferencesPage />} /></Route>
     </Route>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />

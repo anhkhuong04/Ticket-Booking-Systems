@@ -33,7 +33,7 @@ const booking = {
 
 describe('UserDashboardPage', () => {
   beforeEach(() => {
-    mockedUseAuth.mockReturnValue({ user: { id: 'user-1', email: 'customer@lak.vn', fullName: 'Khách hàng', roles: ['CUSTOMER'] }, ready: true, login: vi.fn(), register: vi.fn(), logout: vi.fn() })
+    mockedUseAuth.mockReturnValue({ user: { id: 'user-1', email: 'customer@lak.vn', fullName: 'Khách hàng', roles: ['CUSTOMER'] }, ready: true, login: vi.fn(), register: vi.fn(), logout: vi.fn(), updateDisplayName: vi.fn() })
     mockedGetMyBookings.mockResolvedValue([booking, { ...booking, bookingId: 'booking-2', bookingCode: 'LAK-REFUND', ticketCode: null, ticketStatus: null, bookingStatus: 'REFUND_PENDING', refundStatus: 'REFUND_FAILED', createdAt: '2029-12-02T10:00:00Z' }])
     mockedGetMovies.mockResolvedValue({ content: [{ id: 'movie-1', title: 'Phim đang chiếu', durationMinutes: 120, ageRating: 'T13', releaseDate: '2029-01-01', posterUrl: null, status: 'NOW_SHOWING', genres: [] }], page: 0, size: 4, totalElements: 1, totalPages: 1 })
   })

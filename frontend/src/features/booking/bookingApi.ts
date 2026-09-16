@@ -1,4 +1,5 @@
 import { apiClient } from '../../shared/api/apiClient'
+import type { BillingPreferences } from '../account/profileApi'
 
 export type BookingItem = {
   showtimeSeatId: string
@@ -13,6 +14,7 @@ export type Booking = {
   holdId: string
   showtimeId: string
   movieTitle: string
+  ageRating: string
   cinemaName: string
   auditoriumName: string
   startAt: string
@@ -38,4 +40,12 @@ export async function checkout(holdId: string, idempotencyKey: string, voucherCo
 export async function getBooking(bookingCode: string): Promise<Booking> {
   const response = await apiClient.get<Booking>(`/api/bookings/${encodeURIComponent(bookingCode)}`)
   return response.data
+}
+
+export async function getBookingBilling(bookingCode: string): Promise<BillingPreferences | null> {
+  return (await apiClient.get<BillingPreferences | null>(`/api/bookings/${encodeURIComponent(bookingCode)}/billing`)).data
+}
+
+export async function requestBookingBilling(bookingCode: string, value: BillingPreferences): Promise<BillingPreferences> {
+  return (await apiClient.put<BillingPreferences>(`/api/bookings/${encodeURIComponent(bookingCode)}/billing`, value)).data
 }

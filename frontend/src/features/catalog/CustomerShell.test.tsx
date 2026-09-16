@@ -24,7 +24,7 @@ describe('CustomerShell', () => {
 
   beforeEach(() => {
     logout.mockClear()
-    mockedUseAuth.mockReturnValue({ user: { id: 'user-1', email: 'customer@lak.vn', fullName: 'Khách hàng', roles: ['CUSTOMER'] }, ready: true, login: vi.fn(), register: vi.fn(), logout })
+    mockedUseAuth.mockReturnValue({ user: { id: 'user-1', email: 'customer@lak.vn', fullName: 'Khách hàng', roles: ['CUSTOMER'] }, ready: true, login: vi.fn(), register: vi.fn(), logout, updateDisplayName: vi.fn() })
   })
 
   it('replaces the login call to action with an account menu for a signed-in customer', () => {
@@ -38,7 +38,7 @@ describe('CustomerShell', () => {
   })
 
   it('links an administrator dashboard menu item to the admin dashboard', () => {
-    mockedUseAuth.mockReturnValue({ user: { id: 'admin-1', email: 'admin@lak.vn', fullName: 'Quản trị viên', roles: ['SUPER_ADMIN'] }, ready: true, login: vi.fn(), register: vi.fn(), logout })
+    mockedUseAuth.mockReturnValue({ user: { id: 'admin-1', email: 'admin@lak.vn', fullName: 'Quản trị viên', roles: ['SUPER_ADMIN'] }, ready: true, login: vi.fn(), register: vi.fn(), logout, updateDisplayName: vi.fn() })
     renderShell()
 
     fireEvent.click(screen.getByText('Tài khoản'))

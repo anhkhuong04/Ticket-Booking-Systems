@@ -281,21 +281,21 @@ class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess, Book
     private BookingView view(BookingRow booking, Instant now, List<BookingItemView> items) {
         BookingContext context = context(booking.showtimeId());
         return new BookingView(booking.id(), booking.bookingCode(), booking.holdId(), booking.showtimeId(),
-                context.movieTitle(), context.cinemaName(), context.auditoriumName(), context.startAt(), booking.status(),
+                context.movieTitle(), context.ageRating(), context.cinemaName(), context.auditoriumName(), context.startAt(), booking.status(),
                 booking.subtotal(), booking.voucherCodeSnapshot(), booking.discountAmount(), booking.serviceFee(), booking.totalAmount(),
                 booking.paymentDeadline(), booking.hardDeadline(), now, items);
     }
 
     private BookingContext context(UUID showtimeId) {
         return jdbcTemplate.query("""
-                SELECT movie.title AS movie_title, cinema.name AS cinema_name, auditorium.name AS auditorium_name, showtime.start_at
+                SELECT movie.title AS movie_title, movie.age_rating, cinema.name AS cinema_name, auditorium.name AS auditorium_name, showtime.start_at
                 FROM showtimes showtime
                 JOIN movies movie ON movie.id = showtime.movie_id
                 JOIN auditoriums auditorium ON auditorium.id = showtime.auditorium_id
                 JOIN cinemas cinema ON cinema.id = auditorium.cinema_id
                 WHERE showtime.id=?
                 """, (resultSet, rowNumber) -> new BookingContext(
-                resultSet.getString("movie_title"), resultSet.getString("cinema_name"),
+                resultSet.getString("movie_title"), resultSet.getString("age_rating"), resultSet.getString("cinema_name"),
                 resultSet.getString("auditorium_name"), instant(resultSet, "start_at")), showtimeId)
                 .stream().findFirst().orElseThrow(() -> ApplicationException.notFound(
                         "SHOWTIME_NOT_FOUND", "Showtime was not found"));
@@ -368,7 +368,7 @@ class JdbcBookingCheckout implements BookingCheckout, BookingPaymentAccess, Book
             Instant paymentDeadline, Instant hardDeadline) {
     }
 
-    private record BookingContext(String movieTitle, String cinemaName, String auditoriumName, Instant startAt) {
+    private record BookingContext(String movieTitle, String ageRating, String cinemaName, String auditoriumName, Instant startAt) {
     }
 
     private record SeatAvailabilityChanged(String type, UUID showtimeId, UUID resourceId, List<UUID> showtimeSeatIds) {

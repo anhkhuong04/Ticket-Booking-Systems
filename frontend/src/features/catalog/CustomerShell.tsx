@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { ChevronDown, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, UserRound, ReceiptText } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import footerBanner from '../../assets/logo-banners/footbanner.png'
 import logo from '../../assets/logo-banners/logo.png'
@@ -70,6 +70,7 @@ export function CustomerShell() {
                 </summary>
                 <div className="absolute right-0 top-full z-20 mt-2 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-lg shadow-slate-900/10">
                   <Link className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-text-primary hover:bg-primary-soft" to={dashboardPath(user.roles)}><LayoutDashboard size={18} aria-hidden="true" />Dashboard</Link>
+                  {user.roles.includes('CUSTOMER') && <><Link className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-text-primary hover:bg-primary-soft" to="/me/profile"><UserRound size={18} aria-hidden="true" />Hồ sơ</Link><Link className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-text-primary hover:bg-primary-soft" to="/me/billing"><ReceiptText size={18} aria-hidden="true" />Thông tin hóa đơn</Link></>}
                   <button onClick={() => void logout()} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-text-primary hover:bg-primary-soft"><LogOut size={18} aria-hidden="true" />Đăng xuất</button>
                 </div>
               </details>

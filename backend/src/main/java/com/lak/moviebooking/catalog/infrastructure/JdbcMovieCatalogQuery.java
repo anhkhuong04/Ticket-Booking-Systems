@@ -52,7 +52,8 @@ class JdbcMovieCatalogQuery implements MovieCatalogQuery {
     public MovieDetail findMovie(UUID movieId) {
         Optional<MovieDetail> movie = jdbcTemplate.query("""
                 SELECT m.id, m.title, m.description, m.duration_minutes, m.age_rating, m.release_date,
-                       m.poster_url, m.trailer_url, m.status,
+                       m.poster_url, m.trailer_url, m.status, m.country, m.director,
+                       COALESCE((SELECT array_agg(cm.name ORDER BY cm.display_order) FROM movie_cast_members cm WHERE cm.movie_id=m.id), ARRAY[]::varchar[]) AS cast_members,
                        COALESCE(array_agg(g.name ORDER BY g.name) FILTER (WHERE g.id IS NOT NULL), '{}') AS genres
                 FROM movies m
                 LEFT JOIN movie_genres mg ON mg.movie_id = m.id
@@ -62,6 +63,12 @@ class JdbcMovieCatalogQuery implements MovieCatalogQuery {
                 GROUP BY m.id
                 """, this::mapDetail, movieId).stream().findFirst();
         return movie.orElseThrow(() -> ApplicationException.notFound("MOVIE_NOT_FOUND", "Movie was not found"));
+    }
+
+    @Override
+    public MovieDetail findMovieForShowtimeCreation(UUID movieId) {
+        jdbcTemplate.query("SELECT id FROM movies WHERE id=? FOR UPDATE", (rs, row) -> rs.getObject("id", UUID.class), movieId);
+        return findMovie(movieId);
     }
 
     @Override
@@ -104,11 +111,15 @@ class JdbcMovieCatalogQuery implements MovieCatalogQuery {
     private MovieDetail mapDetail(ResultSet rs, int row) throws SQLException {
         return new MovieDetail(rs.getObject("id", UUID.class), rs.getString("title"), rs.getString("description"),
                 rs.getInt("duration_minutes"), rs.getString("age_rating"), rs.getObject("release_date", LocalDate.class),
-                rs.getString("poster_url"), rs.getString("trailer_url"), rs.getString("status"), genres(rs));
+                rs.getString("poster_url"), rs.getString("trailer_url"), rs.getString("status"), genres(rs),
+                rs.getString("country"), rs.getString("director"), genresOrCast(rs, "cast_members"));
     }
 
     private List<String> genres(ResultSet rs) throws SQLException {
-        String[] values = (String[]) rs.getArray("genres").getArray();
-        return List.of(values);
+        return genresOrCast(rs, "genres");
+    }
+
+    private List<String> genresOrCast(ResultSet rs, String column) throws SQLException {
+        return List.of((String[]) rs.getArray(column).getArray());
     }
 }

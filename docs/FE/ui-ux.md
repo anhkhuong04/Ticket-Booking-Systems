@@ -649,7 +649,7 @@ Poster khoảng `300px`.
 - metadata;
 - description;
 - expandable description;
-- CTA `Chọn suất chiếu` sticky bottom khi phù hợp.
+- CTA `Chọn suất chiếu` cuộn đến lịch chiếu bên dưới phần mô tả.
 
 ## Content
 
@@ -659,10 +659,13 @@ Poster khoảng `300px`.
 - duration;
 - release date;
 - director nếu có;
+- country nếu có;
 - cast nếu có;
 - description;
 - trailer;
 - age restriction notice nếu cần.
+
+Lịch chiếu nằm ngay dưới khối thông tin/mô tả phim trên `/movies/:id`. CTA `Chọn suất chiếu` cuộn đến khối này. Ngày và rạp lấy từ availability API; chỉ hiển thị suất đang mở bán, giờ theo `Asia/Ho_Chi_Minh`, định dạng phòng và giá vé thấp nhất theo loại ghế. Khi chưa có dữ liệu credits hoặc suất mở bán, hiển thị trạng thái cập nhật/trống thay vì giả lập. Phim `ARCHIVED` không hiển thị công khai; Super Admin lưu trữ sau khi xử lý các suất còn mở bán.
 
 ---
 
@@ -693,7 +696,7 @@ Showtime Chip hiển thị:
 ## Rules
 
 - group theo cinema;
-- closed showtime vẫn readable nhưng disabled;
+- chỉ hiển thị showtime còn mở bán do API trả về;
 - low availability có badge nếu dữ liệu backend hỗ trợ;
 - nhớ cinema được chọn gần nhất;
 - đổi cinema không yêu cầu chọn lại movie.

@@ -13,6 +13,7 @@ export type PriceProfileDetail = { profile: PriceProfile; rules: PriceRule[] }
 
 export async function getAdminMovies() { return (await apiClient.get<AdminMovie[]>('/api/admin/movies')).data }
 export async function createMovie(payload: MoviePayload) { return (await apiClient.post<MovieDetail>('/api/admin/movies', payload)).data }
+export async function updateMovie(id: string, payload: MoviePayload) { return (await apiClient.put<MovieDetail>(`/api/admin/movies/${id}`, payload)).data }
 export async function archiveMovie(id: string) { await apiClient.delete(`/api/admin/movies/${id}`) }
 export async function createGenre(payload: { name: string; slug: string }) { return (await apiClient.post<Genre>('/api/admin/genres', payload)).data }
 export async function signMedia(file: File) { return (await apiClient.post<{ cloudName: string; apiKey: string; folder: string; timestamp: number; signature: string }>('/api/admin/media/signatures', { filename: file.name, contentType: file.type, sizeBytes: file.size })).data }

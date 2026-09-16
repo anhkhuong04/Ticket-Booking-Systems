@@ -14,8 +14,12 @@ public record MovieDetail(
         String posterUrl,
         String trailerUrl,
         String status,
-        List<String> genres) {
+        List<String> genres,
+        String country,
+        String director,
+        List<String> castMembers) {
     public MovieDetail {
         genres = List.copyOf(genres);
+        castMembers = List.copyOf(castMembers);
     }
 }

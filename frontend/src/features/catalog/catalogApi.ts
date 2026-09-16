@@ -14,6 +14,9 @@ export type Movie = {
 export type MovieDetail = Movie & {
   description: string | null
   trailerUrl: string | null
+  country: string | null
+  director: string | null
+  castMembers: string[]
 }
 
 export type MoviePage = {

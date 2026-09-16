@@ -9,5 +9,7 @@ public interface MovieCatalogQuery {
 
     MovieDetail findMovie(UUID movieId);
 
+    MovieDetail findMovieForShowtimeCreation(UUID movieId);
+
     List<GenreSummary> findGenres();
 }

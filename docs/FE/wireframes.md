@@ -449,13 +449,14 @@ Hãy thử thay đổi bộ lọc.
 │ │               │   Mô tả phim...                                         │
 │ │               │                                                         │
 │ └───────────────┘   Đạo diễn: ...                                         │
+│                     Quốc gia: ...                                         │
 │                     Diễn viên: ...                                         │
 │                                                                            │
 │                     [Chọn suất chiếu] [Xem trailer]                         │
 ├────────────────────────────────────────────────────────────────────────────┤
 │ SUẤT CHIẾU                                                                 │
 │                                                                            │
-│ [15/09] [16/09] [17/09] [18/09] [19/09]                                   │
+│ [Rạp: Tất cả rạp ▼] [Ngày xem: 15/09 ▼]                                   │
 │                                                                            │
 │ LAK Cinema A                                                               │
 │ [10:30] [13:20] [16:10] [20:00]                                           │
@@ -479,20 +480,20 @@ Hãy thử thay đổi bộ lọc.
 │                              │
 │ Mô tả phim...                │
 │ [Xem thêm]                   │
+│ Quốc gia / Đạo diễn / DV      │
 │                              │
 │ [Xem trailer]                │
 ├──────────────────────────────┤
 │ Suất chiếu                   │
-│ [15] [16] [17] [18] →       │
+│ [Rạp ▼] [Ngày xem ▼]         │
 │                              │
 │ LAK Cinema A                 │
 │ [10:30] [13:20] [16:10]     │
 ├──────────────────────────────┤
-│ [Chọn suất chiếu]            │
 └──────────────────────────────┘
 ```
 
-CTA sticky bottom khi user chưa cuộn tới showtime block hoặc khi flow yêu cầu.
+CTA `Chọn suất chiếu` trong phần thông tin cuộn đến khối lịch chiếu ngay bên dưới; suất mở bán dẫn thẳng sang chọn ghế.
 
 ---
 

@@ -1,21 +1,71 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { isAxiosError } from 'axios'
-import { getGenres, type Genre, type MovieDetail } from '../catalog/catalogApi'
-import { archiveMovie, createAuditorium, createCinema, createGenre, createMovie, deactivateCinema, getAdminCinemas, getAdminMovies, getAuditoriums, getSeats, saveSeats, uploadPoster, type AdminMovie, type Auditorium, type CinemaAdmin, type Seat } from './adminApi'
+import { getGenres, type Genre } from '../catalog/catalogApi'
+import { archiveMovie, createAuditorium, createCinema, createGenre, deactivateCinema, getAdminCinemas, getAdminMovies, getAuditoriums, getSeats, saveSeats, type AdminMovie, type Auditorium, type CinemaAdmin, type Seat } from './adminApi'
+import { MovieEditorForm } from './MovieEditorForm'
 
 function message(error: unknown) { return isAxiosError<{ message?: string }>(error) ? error.response?.data?.message ?? 'Không thể hoàn tất thao tác.' : error instanceof Error ? error.message : 'Không thể hoàn tất thao tác.' }
 function Notice({ error }: { error: string | null }) { return error ? <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null }
 function Page({ title, children }: { title: string; children: ReactNode }) { return <main className="mx-auto max-w-7xl p-4 sm:p-6"><h1 className="text-2xl font-bold text-text-primary">{title}</h1>{children}</main> }
 
 export function AdminMoviesPage() {
-  const [movies, setMovies] = useState<AdminMovie[]>([]); const [genres, setGenres] = useState<Genre[]>([]); const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false)
-  const load = useCallback(() => { setError(null); void Promise.all([getAdminMovies(), getGenres()]).then(([allMovies, allGenres]) => { setMovies(allMovies); setGenres(allGenres) }, (reason) => setError(message(reason))) }, [])
+  const [movies, setMovies] = useState<AdminMovie[]>([])
+  const [genres, setGenres] = useState<Genre[]>([])
+  const [selected, setSelected] = useState<AdminMovie | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const load = useCallback(() => {
+    void Promise.all([getAdminMovies(), getGenres()]).then(([allMovies, allGenres]) => {
+      setMovies(allMovies)
+      setGenres(allGenres)
+    }, (reason) => setError(message(reason)))
+  }, [])
   useEffect(load, [load])
-  const submitMovie = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(null); try { const selected = genres.filter((genre) => data.getAll('genreIds').includes(genre.id)).map((genre) => genre.id); await createMovie({ title: String(data.get('title')), description: String(data.get('description')) || null, durationMinutes: Number(data.get('durationMinutes')), ageRating: String(data.get('ageRating')), releaseDate: String(data.get('releaseDate')), posterUrl: String(data.get('posterUrl')) || null, trailerUrl: String(data.get('trailerUrl')) || null, status: String(data.get('status')) as MovieDetail['status'], genreIds: selected }); event.currentTarget.reset(); load() } catch (reason) { setError(message(reason)) } finally { setBusy(false) } }
-  const upload = async (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; const target = event.currentTarget.form?.elements.namedItem('posterUrl'); if (!file || !(target instanceof HTMLInputElement)) return; setBusy(true); setError(null); try { target.value = await uploadPoster(file) } catch (reason) { setError(message(reason)) } finally { setBusy(false) } }
-  const submitGenre = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); try { await createGenre({ name: String(data.get('name')), slug: String(data.get('slug')) }); event.currentTarget.reset(); load() } catch (reason) { setError(message(reason)) } finally { setBusy(false) } }
-  return <Page title="Phim"><p className="mt-2 text-sm text-text-secondary">Quản lý metadata, thể loại và poster phim. Chỉ quản trị hệ thống có quyền thay đổi catalog.</p><Notice error={error} /><div className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]"><section className="overflow-x-auto rounded-xl border border-border bg-surface"><table className="min-w-full text-left text-sm"><thead className="border-b border-border bg-slate-50 text-text-secondary"><tr><th className="p-3">Tên phim</th><th className="p-3">Ngày chiếu</th><th className="p-3">Rating</th><th className="p-3">Trạng thái</th><th className="p-3">Thao tác</th></tr></thead><tbody>{movies.map((movie) => <tr key={movie.id} className="border-b border-border"><td className="p-3 font-medium">{movie.title}<span className="block text-xs font-normal text-text-muted">{movie.durationMinutes} phút · {movie.genres.join(', ')}</span></td><td className="p-3">{movie.releaseDate}</td><td className="p-3">{movie.ageRating}</td><td className="p-3">{movie.status}</td><td className="p-3"><button disabled={busy || movie.status === 'ARCHIVED'} onClick={() => void archiveMovie(movie.id).then(load, (reason) => setError(message(reason)))} className="min-h-11 text-sm font-semibold text-primary disabled:opacity-50">Lưu trữ</button></td></tr>)}</tbody></table>{movies.length === 0 && <p className="p-6 text-text-secondary">Chưa có phim.</p>}</section><div className="space-y-6"><form onSubmit={submitMovie} className="rounded-xl border border-border bg-surface p-5"><h2 className="font-semibold">Thêm phim</h2><div className="mt-4 space-y-3"><input required name="title" placeholder="Tên phim" className="control" /><textarea name="description" placeholder="Mô tả" className="control min-h-20" /><div className="grid grid-cols-2 gap-3"><input required name="durationMinutes" type="number" min="1" placeholder="Số phút" className="control" /><input required name="ageRating" placeholder="T16" className="control" /></div><input required name="releaseDate" type="date" className="control" /><select name="status" className="control"><option value="NOW_SHOWING">Đang chiếu</option><option value="COMING_SOON">Sắp chiếu</option></select><input name="posterUrl" placeholder="URL poster" className="control" /><label className="block text-sm font-medium">Hoặc tải poster<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-sm" onChange={upload} /></label><input name="trailerUrl" type="url" placeholder="URL trailer" className="control" /><fieldset><legend className="text-sm font-medium">Thể loại</legend><div className="mt-2 grid grid-cols-2 gap-2">{genres.map((genre) => <label key={genre.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="genreIds" value={genre.id} />{genre.name}</label>)}</div></fieldset><button disabled={busy} className="primary-button w-full">{busy ? 'Đang lưu…' : 'Thêm phim'}</button></div></form><form onSubmit={submitGenre} className="rounded-xl border border-border bg-surface p-5"><h2 className="font-semibold">Thêm thể loại</h2><div className="mt-3 grid gap-3"><input required name="name" placeholder="Tên thể loại" className="control" /><input required name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="action" className="control" /><button disabled={busy} className="secondary-button">Thêm thể loại</button></div></form></div></div></Page>
+
+  const submitGenre = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    setBusy(true)
+    setError(null)
+    try {
+      await createGenre({ name: String(data.get('name')), slug: String(data.get('slug')) })
+      event.currentTarget.reset()
+      load()
+    } catch (reason) { setError(message(reason)) }
+    finally { setBusy(false) }
+  }
+
+  const archive = async (movie: AdminMovie) => {
+    if (!window.confirm(`Lưu trữ phim “${movie.title}”? Phim sẽ không còn hiển thị trên website.`)) return
+    setBusy(true)
+    setError(null)
+    try { await archiveMovie(movie.id); load() }
+    catch (reason) { setError(message(reason)) }
+    finally { setBusy(false) }
+  }
+
+  return <Page title="Phim">
+    <p className="mt-2 text-sm text-text-secondary">Quản lý thông tin và hiển thị phim. Chỉ Super Admin có quyền thay đổi catalog.</p>
+    <Notice error={error} />
+    <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
+      <section className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="min-w-full text-left text-sm">
+          <thead className="border-b border-border bg-slate-50 text-text-secondary"><tr><th className="p-3">Tên phim</th><th className="p-3">Ngày chiếu</th><th className="p-3">Phân loại</th><th className="p-3">Trạng thái</th><th className="p-3">Thao tác</th></tr></thead>
+          <tbody>{movies.map((movie) => <tr key={movie.id} className="border-b border-border">
+            <td className="p-3 font-medium">{movie.title}<span className="block text-xs font-normal text-text-muted">{movie.durationMinutes} phút · {movie.genres.join(', ')}</span></td>
+            <td className="p-3">{movie.releaseDate}</td><td className="p-3">{movie.ageRating}</td><td className="p-3">{movie.status}</td>
+            <td className="p-3"><div className="flex gap-3"><button type="button" disabled={movie.status === 'ARCHIVED'} onClick={() => { setSelected(movie); setError(null) }} className="min-h-11 font-semibold text-primary disabled:opacity-50">Sửa</button><button type="button" disabled={busy || movie.status === 'ARCHIVED'} onClick={() => void archive(movie)} className="min-h-11 font-semibold text-primary disabled:opacity-50">Lưu trữ</button></div></td>
+          </tr>)}</tbody>
+        </table>
+        {movies.length === 0 && <p className="p-6 text-text-secondary">Chưa có phim.</p>}
+      </section>
+      <div className="space-y-6">
+        <MovieEditorForm key={selected?.id ?? 'new'} movie={selected} genres={genres} onSaved={() => { setSelected(null); setError(null); load() }} onCancel={() => setSelected(null)} onError={(reason) => setError(message(reason))} />
+        <form onSubmit={submitGenre} className="rounded-xl border border-border bg-surface p-5"><h2 className="font-semibold">Thêm thể loại</h2><div className="mt-3 grid gap-3"><input required name="name" placeholder="Tên thể loại" className="control" /><input required name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="action" className="control" /><button disabled={busy} className="secondary-button">Thêm thể loại</button></div></form>
+      </div>
+    </div>
+  </Page>
 }
 
 export function AdminCinemasPage() { const [cinemas,setCinemas]=useState<CinemaAdmin[]>([]); const [error,setError]=useState<string|null>(null); const [busy,setBusy]=useState(false); const load=useCallback(()=>{void getAdminCinemas().then(setCinemas,(reason)=>setError(message(reason)))},[]); useEffect(load,[load]); const submit=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);setBusy(true);try{await createCinema({name:String(data.get('name')),address:String(data.get('address')),city:String(data.get('city')),timezone:String(data.get('timezone')),status:'ACTIVE'});event.currentTarget.reset();load()}catch(reason){setError(message(reason))}finally{setBusy(false)}};return <Page title="Rạp"><p className="mt-2 text-sm text-text-secondary">Manager chỉ nhìn và thao tác trên các chi nhánh được phân công.</p><Notice error={error}/><div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]"><section className="grid gap-4 sm:grid-cols-2">{cinemas.map((cinema)=><article key={cinema.id} className="rounded-xl border border-border bg-surface p-5"><p className="text-xs font-semibold text-primary">{cinema.city}</p><h2 className="mt-2 text-lg font-semibold">{cinema.name}</h2><p className="mt-2 text-sm text-text-secondary">{cinema.address}</p><p className="mt-3 text-sm">{cinema.auditoriumCount} phòng · {cinema.status}</p><div className="mt-4 flex gap-3"><Link className="secondary-button" to={`/admin/cinemas/${cinema.id}/auditoriums`}>Xem phòng</Link><button onClick={()=>void deactivateCinema(cinema.id).then(load,(reason)=>setError(message(reason)))} disabled={busy||cinema.status==='INACTIVE'} className="min-h-11 text-sm font-semibold text-primary disabled:opacity-50">Ngừng hoạt động</button></div></article>)}{cinemas.length===0&&<p className="text-text-secondary">Chưa có chi nhánh trong phạm vi của bạn.</p>}</section><form onSubmit={submit} className="rounded-xl border border-border bg-surface p-5"><h2 className="font-semibold">Thêm rạp</h2><p className="mt-1 text-xs text-text-muted">Chỉ Super Admin có thể tạo chi nhánh mới.</p><div className="mt-4 space-y-3"><input required name="name" placeholder="Tên rạp" className="control"/><input required name="address" placeholder="Địa chỉ" className="control"/><input required name="city" placeholder="Thành phố" className="control"/><input required name="timezone" defaultValue="Asia/Ho_Chi_Minh" className="control"/><button disabled={busy} className="primary-button w-full">Thêm rạp</button></div></form></div></Page> }

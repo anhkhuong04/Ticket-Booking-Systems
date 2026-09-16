@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getCinemas, getGenres, getMovie, getMovies, type Cinema, type Genre, type Movie, type MovieDetail } from './catalogApi'
 import { QuickBooking } from '../showtime/QuickBooking'
 import { ProfileAgeAdvisory } from '../account/ageAdvisory'
+import { MovieShowtimes } from '../showtime/MovieShowtimes'
 
 type LoadState<T> = { kind: 'loading' } | { kind: 'loaded'; data: T } | { kind: 'error' }
 
@@ -92,7 +93,27 @@ export function MovieDetailPage() {
   if (state.kind === 'loading') return <main className="min-h-screen bg-background p-6"><div className="mx-auto h-96 max-w-5xl animate-pulse rounded-2xl bg-slate-200" /></main>
   if (state.kind === 'error') return <main className="min-h-screen bg-background p-6"><div className="mx-auto max-w-md"><ErrorBlock retry={load} /></div></main>
   const movie = state.data
-  return <main className="min-h-screen bg-background py-8 sm:py-12"><article className="mx-auto grid max-w-5xl gap-8 px-4 sm:grid-cols-[280px_1fr] sm:px-6 lg:px-8"><div className="overflow-hidden rounded-xl border border-border bg-surface"><MoviePoster movie={movie} priority /></div><div><Link to="/movies" className="text-sm font-semibold text-primary hover:underline">← Tất cả phim</Link><div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary">{movie.ageRating}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-text-secondary">{statusLabel[movie.status]}</span></div><h1 className="mt-4 text-3xl font-bold text-text-primary sm:text-4xl">{movie.title}</h1><p className="mt-3 text-text-secondary">{movie.genres.join(' · ') || 'Đang cập nhật thể loại'} · {movie.durationMinutes} phút · Khởi chiếu {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium' }).format(new Date(`${movie.releaseDate}T00:00:00`))}</p><div className="mt-5"><ProfileAgeAdvisory rating={movie.ageRating} /></div><p className="mt-6 whitespace-pre-line leading-7 text-text-secondary">{movie.description || 'Thông tin phim đang được cập nhật.'}</p><div className="mt-8 flex flex-wrap gap-3"><Link className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 font-semibold text-white hover:bg-primary-hover" to={`/movies/${movie.id}/showtimes`}>Chọn suất chiếu</Link>{movie.trailerUrl && <a className="inline-flex min-h-11 items-center rounded-lg border border-primary px-5 font-semibold text-primary hover:bg-primary-soft" href={movie.trailerUrl} target="_blank" rel="noreferrer">Xem trailer</a>}</div></div></article></main>
+  return <main className="min-h-screen bg-background py-8 sm:py-12">
+    <article className="mx-auto grid max-w-5xl gap-8 px-4 sm:grid-cols-[280px_1fr] sm:px-6 lg:px-8">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface"><MoviePoster movie={movie} priority /></div>
+      <div>
+        <Link to="/movies" className="text-sm font-semibold text-primary hover:underline">← Tất cả phim</Link>
+        <div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary">{movie.ageRating}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-text-secondary">{statusLabel[movie.status]}</span></div>
+        <h1 className="mt-4 text-3xl font-bold text-text-primary sm:text-4xl">{movie.title}</h1>
+        <p className="mt-3 text-text-secondary">{movie.genres.join(' · ') || 'Đang cập nhật thể loại'} · {movie.durationMinutes} phút · Khởi chiếu {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium' }).format(new Date(`${movie.releaseDate}T00:00:00`))}</p>
+        <div className="mt-5"><ProfileAgeAdvisory rating={movie.ageRating} /></div>
+        {(movie.country || movie.director || movie.castMembers.length > 0) && <dl className="mt-6 grid gap-2 text-sm sm:grid-cols-[110px_1fr]">
+          {movie.country && <><dt className="font-semibold">Quốc gia</dt><dd>{movie.country}</dd></>}
+          {movie.director && <><dt className="font-semibold">Đạo diễn</dt><dd>{movie.director}</dd></>}
+          {movie.castMembers.length > 0 && <><dt className="font-semibold">Diễn viên</dt><dd>{movie.castMembers.join(', ')}</dd></>}
+        </dl>}
+        <h2 className="mt-7 text-xl font-semibold">Nội dung phim</h2>
+        <p className="mt-2 whitespace-pre-line leading-7 text-text-secondary">{movie.description || 'Thông tin phim đang được cập nhật.'}</p>
+        <div className="mt-8 flex flex-wrap gap-3"><a className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 font-semibold text-white hover:bg-primary-hover" href="#lich-chieu">Chọn suất chiếu</a>{movie.trailerUrl && <a className="inline-flex min-h-11 items-center rounded-lg border border-primary px-5 font-semibold text-primary hover:bg-primary-soft" href={movie.trailerUrl} target="_blank" rel="noreferrer">Xem trailer</a>}</div>
+      </div>
+    </article>
+    <MovieShowtimes movieId={movie.id} />
+  </main>
 }
 
 function CinemaCard({ cinema }: { cinema: Cinema }) { return <article className="rounded-xl border border-border bg-surface p-5"><p className="text-xs font-semibold uppercase tracking-wide text-primary">{cinema.city}</p><h3 className="mt-2 text-lg font-semibold text-text-primary">{cinema.name}</h3><p className="mt-2 text-sm leading-6 text-text-secondary">{cinema.address}</p><p className="mt-3 text-xs text-text-muted">{cinema.timezone}</p></article> }

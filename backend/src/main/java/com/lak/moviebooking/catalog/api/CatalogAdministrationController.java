@@ -99,8 +99,11 @@ public class CatalogAdministrationController {
 
     public record MovieRequest(@NotBlank String title, String description, @Min(1) int durationMinutes, @NotBlank String ageRating,
             LocalDate releaseDate, String posterUrl, String trailerUrl,
-            @Pattern(regexp = "NOW_SHOWING|COMING_SOON|ARCHIVED") String status, List<UUID> genreIds) {
-        MovieWriteCommand toCommand() { return new MovieWriteCommand(title, description, durationMinutes, ageRating, releaseDate, posterUrl, trailerUrl, status, genreIds == null ? List.of() : genreIds); }
+            @Pattern(regexp = "NOW_SHOWING|COMING_SOON") String status, List<UUID> genreIds,
+            @jakarta.validation.constraints.Size(max = 100) String country,
+            @jakarta.validation.constraints.Size(max = 255) String director,
+            @jakarta.validation.constraints.Size(max = 30) List<@NotBlank @jakarta.validation.constraints.Size(max = 150) String> castMembers) {
+        MovieWriteCommand toCommand() { return new MovieWriteCommand(title, description, durationMinutes, ageRating, releaseDate, posterUrl, trailerUrl, status, genreIds == null ? List.of() : genreIds, country, director, castMembers == null ? List.of() : castMembers); }
     }
 
     public record GenreRequest(@NotBlank String name, @NotBlank @Pattern(regexp = "[a-z0-9]+(?:-[a-z0-9]+)*") String slug) {

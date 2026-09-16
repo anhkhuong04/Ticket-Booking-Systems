@@ -1,4 +1,5 @@
 import { isAxiosError } from 'axios'
+import { Circle, CircleCheck, CircleX, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getBooking, type Booking } from '../booking/bookingApi'
@@ -50,9 +51,9 @@ function isAtLeastFortyFiveMinutesAway(booking: Booking): boolean | null {
 }
 
 function EligibilityItem({ passed, pending, children }: { passed: boolean; pending?: boolean; children: string }) {
-  const icon = pending ? '•' : passed ? '✓' : '!'
+  const Icon: LucideIcon = pending ? Circle : passed ? CircleCheck : CircleX
   const tone = pending ? 'text-text-secondary' : passed ? 'text-success' : 'text-error'
-  return <li className="flex gap-3 text-sm text-text-primary"><span aria-hidden="true" className={`font-bold ${tone}`}>{icon}</span><span>{children}</span></li>
+  return <li className="flex gap-3 text-sm text-text-primary"><Icon aria-hidden="true" className={`mt-0.5 h-5 w-5 shrink-0 ${tone}`} /><span>{children}</span></li>
 }
 
 function RefundTracking({ refund, onRefresh }: { refund: Refund; onRefresh: () => void }) {

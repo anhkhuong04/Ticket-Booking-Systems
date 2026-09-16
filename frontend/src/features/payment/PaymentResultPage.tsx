@@ -1,4 +1,5 @@
 import { isAxiosError } from 'axios'
+import { CircleCheck, CircleQuestionMark, CircleX, Clock3, LoaderCircle, RefreshCw, TimerOff, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getPaymentStatus, type Payment } from './paymentApi'
@@ -24,14 +25,14 @@ function displayState(payment: Payment): DisplayState {
   return 'UNCERTAIN'
 }
 
-const copy: Record<DisplayState, { icon: string; title: string; description: string; tone: string }> = {
-  VERIFYING: { icon: '◌', title: 'Đang xác nhận thanh toán', description: 'Giao dịch đang được xác nhận. Vui lòng không thanh toán lại.', tone: 'text-primary' },
-  SUCCESS: { icon: '✓', title: 'Thanh toán thành công', description: 'Thanh toán đã được backend xác nhận. Vé của bạn đang sẵn sàng.', tone: 'text-emerald-700' },
-  FAILED: { icon: '!', title: 'Thanh toán chưa thành công', description: 'Giao dịch không được hoàn tất. Hãy xem booking trước khi thực hiện thao tác khác.', tone: 'text-red-700' },
-  PAYMENT_REVIEW: { icon: '◷', title: 'Đang xác nhận giao dịch', description: 'Chúng tôi đang đối soát giao dịch. Không cần thanh toán lại.', tone: 'text-amber-800' },
-  REFUND_PENDING: { icon: '↺', title: 'Đang xử lý hoàn tiền', description: 'Thanh toán được ghi nhận sau hạn. Vé sẽ không được phát hành.', tone: 'text-amber-800' },
-  EXPIRED: { icon: '⏱', title: 'Phiên đặt vé đã hết hạn', description: 'Ghế đã được giải phóng. Bạn có thể chọn một suất chiếu khác.', tone: 'text-red-700' },
-  UNCERTAIN: { icon: '?', title: 'Chưa thể xác nhận giao dịch', description: 'Trạng thái chưa đủ rõ ràng. Vui lòng kiểm tra lại thay vì thanh toán lại.', tone: 'text-amber-800' },
+const copy: Record<DisplayState, { icon: LucideIcon; title: string; description: string; tone: string }> = {
+  VERIFYING: { icon: LoaderCircle, title: 'Đang xác nhận thanh toán', description: 'Giao dịch đang được xác nhận. Vui lòng không thanh toán lại.', tone: 'text-primary' },
+  SUCCESS: { icon: CircleCheck, title: 'Thanh toán thành công', description: 'Thanh toán đã được backend xác nhận. Vé của bạn đang sẵn sàng.', tone: 'text-emerald-700' },
+  FAILED: { icon: CircleX, title: 'Thanh toán chưa thành công', description: 'Giao dịch không được hoàn tất. Hãy xem booking trước khi thực hiện thao tác khác.', tone: 'text-red-700' },
+  PAYMENT_REVIEW: { icon: Clock3, title: 'Đang xác nhận giao dịch', description: 'Chúng tôi đang đối soát giao dịch. Không cần thanh toán lại.', tone: 'text-amber-800' },
+  REFUND_PENDING: { icon: RefreshCw, title: 'Đang xử lý hoàn tiền', description: 'Thanh toán được ghi nhận sau hạn. Vé sẽ không được phát hành.', tone: 'text-amber-800' },
+  EXPIRED: { icon: TimerOff, title: 'Phiên đặt vé đã hết hạn', description: 'Ghế đã được giải phóng. Bạn có thể chọn một suất chiếu khác.', tone: 'text-red-700' },
+  UNCERTAIN: { icon: CircleQuestionMark, title: 'Chưa thể xác nhận giao dịch', description: 'Trạng thái chưa đủ rõ ràng. Vui lòng kiểm tra lại thay vì thanh toán lại.', tone: 'text-amber-800' },
 }
 
 export function PaymentResultPage() {
@@ -60,15 +61,16 @@ export function PaymentResultPage() {
   }, [state])
 
   if (!paymentId) return <main className="grid min-h-screen place-items-center bg-background p-6"><section role="alert" className="max-w-md rounded-xl border border-red-200 bg-surface p-6 text-red-800">Không tìm thấy mã thanh toán.</section></main>
-  if (state.kind === 'loading') return <main className="grid min-h-screen place-items-center bg-background p-6" aria-busy="true"><section className="w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center"><p className="text-4xl text-primary" aria-hidden="true">◌</p><h1 className="mt-4 text-xl font-bold">Đang xác nhận thanh toán</h1></section></main>
+  if (state.kind === 'loading') return <main className="grid min-h-screen place-items-center bg-background p-6" aria-busy="true"><section className="w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center"><LoaderCircle className="mx-auto h-12 w-12 animate-spin text-primary" aria-hidden="true" /><h1 className="mt-4 text-xl font-bold">Đang xác nhận thanh toán</h1></section></main>
   if (state.kind === 'error') return <main className="grid min-h-screen place-items-center bg-background p-6"><section className="w-full max-w-md rounded-xl border border-red-200 bg-surface p-8 text-center"><h1 className="text-xl font-bold">Chưa thể tải trạng thái giao dịch</h1><p role="alert" className="mt-3 text-sm text-text-secondary">{state.message}</p><button onClick={() => setAttempt((value) => value + 1)} className="mt-6 min-h-11 rounded-lg bg-primary px-4 font-semibold text-white">Kiểm tra lại</button></section></main>
 
   const payment = state.payment
   const display = displayState(payment)
   const content = copy[display]
+  const StatusIcon = content.icon
   const bookingLink = `/checkout/${encodeURIComponent(payment.bookingCode)}`
   return <main className="grid min-h-screen place-items-center bg-background p-6"><section className="w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center shadow-sm" aria-live="polite">
-    <p className={`text-4xl font-bold ${content.tone}`} aria-hidden="true">{content.icon}</p>
+    <StatusIcon className={`mx-auto h-12 w-12 ${content.tone}`} aria-hidden="true" />
     <h1 className="mt-4 text-2xl font-bold text-text-primary">{content.title}</h1>
     <p className="mt-3 text-sm leading-6 text-text-secondary">{content.description}</p>
     <p className="mt-5 rounded-lg bg-background px-4 py-3 text-sm text-text-secondary">Booking: <span className="font-semibold text-text-primary">{payment.bookingCode}</span></p>

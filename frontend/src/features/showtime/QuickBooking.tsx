@@ -1,4 +1,4 @@
-import { CalendarDays, Clock3, Film, MapPin, Ticket } from 'lucide-react'
+import { CalendarDays, ChevronDown, Clock3, Film, MapPin, Ticket } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMovies, type Movie } from '../catalog/catalogApi'
@@ -18,7 +18,7 @@ function formatShowtime(showtime: Showtime) {
   return `${timeFormatter.format(new Date(showtime.startAt))} · ${showtime.screenFormat}`
 }
 
-export function QuickBooking() {
+export function QuickBooking({ overlapHero = false }: { overlapHero?: boolean }) {
   const navigate = useNavigate()
   const [movies, setMovies] = useState<LoadState<Movie[]>>({ kind: 'loading' })
   const [movieRetry, setMovieRetry] = useState(0)
@@ -95,19 +95,19 @@ export function QuickBooking() {
     setShowtimes(value ? { kind: 'loading' } : { kind: 'idle' })
   }
 
-  return <section className="relative z-10 mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8" aria-labelledby="quick-booking-title">
+  return <section className={`relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${overlapHero ? '-mt-20 sm:-mt-24' : 'mt-8'}`} aria-labelledby="quick-booking-title">
     <div className="rounded-xl border border-border bg-surface p-5 shadow-lg shadow-slate-900/10 sm:p-6">
       <div className="flex items-start gap-3">
         <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary" aria-hidden="true"><Ticket size={22} /></span>
         <div><h2 id="quick-booking-title" className="text-lg font-semibold text-text-primary">Đặt vé nhanh</h2><p className="mt-1 text-sm text-text-secondary">Chỉ hiển thị rạp, ngày và suất chiếu đang mở bán.</p></div>
       </div>
 
-      <form className="mt-5 grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_auto] lg:items-end" onSubmit={(event) => { event.preventDefault(); if (showtimeId) navigate(`/showtimes/${showtimeId}/seats`) }}>
-        <label className="text-sm font-medium text-text-primary"><span className="flex items-center gap-2"><Film size={16} aria-hidden="true" />Phim</span><select aria-label="Chọn phim" className="control mt-2 w-full" value={movieId} disabled={movies.kind === 'loading' || movies.kind === 'error'} onChange={(event) => changeMovie(event.target.value)}><option value="">Chọn phim</option>{movies.kind === 'loaded' && movies.data.map((movie) => <option key={movie.id} value={movie.id}>{movie.title}</option>)}</select></label>
-        <label className="text-sm font-medium text-text-primary"><span className="flex items-center gap-2"><MapPin size={16} aria-hidden="true" />Rạp</span><select aria-label="Chọn rạp" className="control mt-2 w-full" value={cinemaId} disabled={!movieId || availability.kind !== 'loaded' || cinemas.length === 0} onChange={(event) => changeCinema(event.target.value)}><option value="">{availability.kind === 'loading' ? 'Đang tải rạp…' : 'Chọn rạp'}</option>{cinemas.map((cinema) => <option key={cinema.cinemaId} value={cinema.cinemaId}>{cinema.cinemaName}</option>)}</select></label>
-        <label className="text-sm font-medium text-text-primary"><span className="flex items-center gap-2"><CalendarDays size={16} aria-hidden="true" />Ngày</span><select aria-label="Chọn ngày" className="control mt-2 w-full" value={date} disabled={!cinemaId || dates.length === 0} onChange={(event) => changeDate(event.target.value)}><option value="">Chọn ngày</option>{dates.map((value) => <option key={value} value={value}>{formatDate(value)}</option>)}</select></label>
-        <label className="text-sm font-medium text-text-primary"><span className="flex items-center gap-2"><Clock3 size={16} aria-hidden="true" />Suất chiếu</span><select aria-label="Chọn suất chiếu" className="control mt-2 w-full" value={showtimeId} disabled={!date || showtimes.kind !== 'loaded' || availableShowtimes.length === 0} onChange={(event) => setShowtimeId(event.target.value)}><option value="">{showtimes.kind === 'loading' ? 'Đang tải suất…' : 'Chọn suất'}</option>{availableShowtimes.map((showtime) => <option key={showtime.id} value={showtime.id}>{formatShowtime(showtime)}</option>)}</select></label>
-        <button type="submit" disabled={!showtimeId} className="primary-button min-h-11 whitespace-nowrap px-5 disabled:cursor-not-allowed disabled:opacity-50">Chọn ghế</button>
+      <form className="mt-5 grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_auto] lg:items-center" onSubmit={(event) => { event.preventDefault(); if (showtimeId) navigate(`/showtimes/${showtimeId}/seats`) }}>
+        <label className="relative block"><span className="sr-only">Chọn phim</span><Film className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={18} aria-hidden="true" /><select aria-label="Chọn phim" className="control min-h-12 w-full appearance-none pl-10 pr-9" value={movieId} disabled={movies.kind === 'loading' || movies.kind === 'error'} onChange={(event) => changeMovie(event.target.value)}><option value="">Chọn phim</option>{movies.kind === 'loaded' && movies.data.map((movie) => <option key={movie.id} value={movie.id}>{movie.title}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" /></label>
+        <label className="relative block"><span className="sr-only">Chọn rạp</span><MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={18} aria-hidden="true" /><select aria-label="Chọn rạp" className="control min-h-12 w-full appearance-none pl-10 pr-9" value={cinemaId} disabled={!movieId || availability.kind !== 'loaded' || cinemas.length === 0} onChange={(event) => changeCinema(event.target.value)}><option value="">{availability.kind === 'loading' ? 'Đang tải rạp…' : 'Chọn rạp'}</option>{cinemas.map((cinema) => <option key={cinema.cinemaId} value={cinema.cinemaId}>{cinema.cinemaName}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" /></label>
+        <label className="relative block"><span className="sr-only">Chọn ngày</span><CalendarDays className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={18} aria-hidden="true" /><select aria-label="Chọn ngày" className="control min-h-12 w-full appearance-none pl-10 pr-9" value={date} disabled={!cinemaId || dates.length === 0} onChange={(event) => changeDate(event.target.value)}><option value="">Chọn ngày</option>{dates.map((value) => <option key={value} value={value}>{formatDate(value)}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" /></label>
+        <label className="relative block"><span className="sr-only">Chọn suất chiếu</span><Clock3 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={18} aria-hidden="true" /><select aria-label="Chọn suất chiếu" className="control min-h-12 w-full appearance-none pl-10 pr-9" value={showtimeId} disabled={!date || showtimes.kind !== 'loaded' || availableShowtimes.length === 0} onChange={(event) => setShowtimeId(event.target.value)}><option value="">{showtimes.kind === 'loading' ? 'Đang tải suất…' : 'Chọn suất'}</option>{availableShowtimes.map((showtime) => <option key={showtime.id} value={showtime.id}>{formatShowtime(showtime)}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" /></label>
+        <button type="submit" disabled={!showtimeId} className="primary-button min-h-12 whitespace-nowrap px-5 disabled:cursor-not-allowed disabled:opacity-50">Mua vé nhanh</button>
       </form>
 
       <div className="mt-3 min-h-5 text-sm" aria-live="polite">

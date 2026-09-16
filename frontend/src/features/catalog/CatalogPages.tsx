@@ -14,6 +14,17 @@ function MoviePoster({ movie, priority = false }: { movie: Movie; priority?: boo
   return <img className="aspect-[2/3] w-full object-cover" src={movie.posterUrl} alt={`Poster phim ${movie.title}`} loading={priority ? 'eager' : 'lazy'} />
 }
 
+function FeaturedHero({ movie }: { movie: Movie }) {
+  return <section className="relative isolate min-h-[360px] overflow-hidden bg-slate-900 sm:min-h-[430px]">
+    {movie.posterUrl && <img className="absolute inset-0 size-full object-cover object-center" src={movie.posterUrl} alt="" aria-hidden="true" loading="eager" />}
+    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-slate-900/25 sm:via-white/80" />
+    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
+    <div className="relative mx-auto flex min-h-[360px] max-w-7xl items-center px-4 pb-24 pt-12 sm:min-h-[430px] sm:px-6 sm:pb-32 lg:px-8">
+      <div className="max-w-xl"><p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">Phim nổi bật tuần này</p><h1 className="mt-3 text-4xl font-bold leading-[1.08] text-text-primary sm:text-5xl">{movie.title}</h1><p className="mt-4 text-sm font-medium text-text-secondary sm:text-base">{movie.ageRating} · {movie.genres.join(' · ')} · {movie.durationMinutes} phút</p><Link className="mt-7 inline-flex min-h-11 items-center rounded-lg bg-primary px-5 font-semibold text-white shadow-sm hover:bg-primary-hover" to={`/movies/${movie.id}`}>Đặt vé ngay</Link></div>
+    </div>
+  </section>
+}
+
 function MovieCard({ movie }: { movie: Movie }) {
   return <article className="overflow-hidden rounded-xl border border-border bg-surface transition-shadow hover:shadow-md">
     <Link to={`/movies/${movie.id}`} className="block focus-visible:outline-none">
@@ -51,10 +62,10 @@ export function HomePage() {
   }, [])
   useEffect(load, [load])
   const featured = nowShowing.kind === 'loaded' ? nowShowing.data[0] : null
-  return <main className="bg-background pb-16"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    {featured && <section className="mt-8 overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-surface to-primary-soft p-6 sm:mt-10 sm:grid sm:grid-cols-[1fr_240px] sm:items-center sm:gap-8 sm:p-10"><div><p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">Phim nổi bật</p><h1 className="mt-3 text-3xl font-bold leading-tight text-text-primary sm:text-4xl">{featured.title}</h1><p className="mt-3 text-text-secondary">{featured.ageRating} · {featured.genres.join(' · ')} · {featured.durationMinutes} phút</p><Link className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-primary px-5 font-semibold text-white hover:bg-primary-hover" to={`/movies/${featured.id}`}>Đặt vé</Link></div><div className="mt-6 overflow-hidden rounded-xl sm:mt-0"><MoviePoster movie={featured} priority /></div></section>}
-    {nowShowing.kind === 'loading' && <div className="mt-8 h-72 animate-pulse rounded-2xl bg-slate-200" />}
-    </div><QuickBooking /><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  return <main className="bg-background pb-16">
+    {featured && <FeaturedHero movie={featured} />}
+    {nowShowing.kind === 'loading' && <div className="h-[360px] animate-pulse bg-slate-200 sm:h-[430px]" />}
+    <QuickBooking overlapHero={Boolean(featured)} /><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <Section title="Phim đang chiếu" to="/movies?status=NOW_SHOWING">{nowShowing.kind === 'loading' ? <MovieSkeletons /> : nowShowing.kind === 'error' ? <ErrorBlock retry={load} /> : nowShowing.data.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{nowShowing.data.map((movie) => <MovieCard key={movie.id} movie={movie} />)}</div> : <p className="rounded-xl border border-border bg-surface p-5 text-text-secondary">Chưa có phim đang chiếu.</p>}</Section>
     <Section title="Phim sắp chiếu" to="/movies?status=COMING_SOON">{comingSoon.kind === 'loading' ? <MovieSkeletons /> : comingSoon.kind === 'error' ? <ErrorBlock retry={load} /> : comingSoon.data.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{comingSoon.data.map((movie) => <MovieCard key={movie.id} movie={movie} />)}</div> : <p className="rounded-xl border border-border bg-surface p-5 text-text-secondary">Chưa có phim sắp chiếu.</p>}</Section>
     <Section title="Rạp LAK" to="/cinemas">{cinemas.kind === 'loading' ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((item) => <div className="h-36 animate-pulse rounded-xl bg-slate-200" key={item} />)}</div> : cinemas.kind === 'error' ? <ErrorBlock retry={load} /> : cinemas.data.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{cinemas.data.slice(0, 3).map((cinema) => <CinemaCard key={cinema.id} cinema={cinema} />)}</div> : <p className="rounded-xl border border-border bg-surface p-5 text-text-secondary">Chưa có chi nhánh đang hoạt động.</p>}</Section>

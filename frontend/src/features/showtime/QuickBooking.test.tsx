@@ -38,14 +38,14 @@ describe('QuickBooking', () => {
       <Route path="/showtimes/:showtimeId/seats" element={<h1>Chọn ghế cho suất chiếu</h1>} />
     </Routes></MemoryRouter>)
 
-    expect(screen.getByRole('button', { name: 'Chọn ghế' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Mua vé nhanh' })).toBeDisabled()
     fireEvent.change(await screen.findByLabelText('Chọn phim'), { target: { value: 'movie-1' } })
     await waitFor(() => expect(mockedGetAvailability).toHaveBeenCalledWith('movie-1'))
     fireEvent.change(await screen.findByLabelText('Chọn rạp'), { target: { value: 'cinema-1' } })
     fireEvent.change(screen.getByLabelText('Chọn ngày'), { target: { value: '2030-01-02' } })
     await waitFor(() => expect(mockedGetShowtimes).toHaveBeenCalledWith('movie-1', '2030-01-02', 'cinema-1'))
     fireEvent.change(screen.getByLabelText('Chọn suất chiếu'), { target: { value: 'showtime-1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Chọn ghế' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mua vé nhanh' }))
 
     expect(await screen.findByRole('heading', { name: 'Chọn ghế cho suất chiếu' })).toBeInTheDocument()
   })

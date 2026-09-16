@@ -59,12 +59,14 @@ class IdentityAuthenticationIT extends AbstractIntegrationTest {
 
     @Test
     void storesOnlyTheHashOfResetTokensAndInvalidatesThemAfterUse() {
-        authenticationService.register("Customer Four", "customer-four@example.com", "a-secure-password");
+        RefreshSessionResult session = authenticationService.register("Customer Four", "customer-four@example.com", "a-secure-password");
         authenticationService.requestPasswordReset("customer-four@example.com");
 
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM password_reset_tokens WHERE token_hash ~ '^[0-9a-f]{64}$'", Integer.class)).isEqualTo(1);
+                "SELECT count(*) FROM password_reset_tokens WHERE user_id=? AND token_hash ~ '^[0-9a-f]{64}$'", Integer.class,
+                session.session().user().id())).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM outbox_events WHERE event_type = 'notification.email.requested'", Integer.class)).isEqualTo(1);
+                "SELECT count(*) FROM outbox_events WHERE event_type='notification.email.requested' AND aggregate_id=?", Integer.class,
+                session.session().user().id())).isEqualTo(1);
     }
 }

@@ -68,7 +68,7 @@ export function CustomerShell() {
         <img
           src={footerBanner}
           alt="Điện ảnh kết nối cảm xúc - LAK Cinema"
-          className="mx-auto h-auto w-full max-w-[978px]"
+          className="block h-auto w-full"
         />
       </div>
       <footer className="border-t border-border bg-surface">

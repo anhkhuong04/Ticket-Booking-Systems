@@ -7,6 +7,7 @@ import com.lak.moviebooking.common.security.AuthenticatedPrincipal;
 import com.lak.moviebooking.identity.application.AccessTokenVerifier;
 import com.lak.moviebooking.identity.application.IdentityUserQuery;
 import com.lak.moviebooking.common.config.AuthProperties;
+import com.lak.moviebooking.common.config.RateLimitProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +19,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
 
 @Configuration
@@ -31,10 +34,13 @@ class SecurityConfiguration {
             ApiSecurityResponseWriter responseWriter,
             DeniedAccessAudit deniedAccessAudit,
             AuthProperties properties,
+            RateLimitProperties rateLimitProperties,
+            StringRedisTemplate redisTemplate,
             java.time.Clock clock) throws Exception {
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(
                 accessTokenVerifier, identityUserQuery, clock, responseWriter);
         ApiCsrfFilter csrfFilter = new ApiCsrfFilter(properties, responseWriter);
+        RedisApiRateLimitFilter rateLimitFilter = new RedisApiRateLimitFilter(redisTemplate, rateLimitProperties, responseWriter);
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -43,6 +49,10 @@ class SecurityConfiguration {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"))
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, exception) -> responseWriter.write(
@@ -70,7 +80,8 @@ class SecurityConfiguration {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(csrfFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 

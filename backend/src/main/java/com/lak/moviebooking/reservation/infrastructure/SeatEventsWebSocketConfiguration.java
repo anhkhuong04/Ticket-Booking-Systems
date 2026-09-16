@@ -21,6 +21,6 @@ class SeatEventsWebSocketConfiguration implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(handler, "/ws/seats")
-                .setAllowedOriginPatterns(corsProperties.allowedOrigins().toArray(String[]::new));
+                .setAllowedOrigins(corsProperties.allowedOrigins().toArray(String[]::new));
     }
 }

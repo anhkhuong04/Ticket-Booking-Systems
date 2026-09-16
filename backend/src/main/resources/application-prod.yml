@@ -11,5 +11,9 @@ logging:
     root: ${LOG_LEVEL:INFO}
 
 app:
+
+  cors:
+    # Production origins must be declared explicitly; never inherit the local development default.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
   auth:
     cookie-secure: ${AUTH_COOKIE_SECURE:true}

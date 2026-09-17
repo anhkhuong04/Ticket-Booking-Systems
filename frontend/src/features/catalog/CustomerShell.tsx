@@ -1,11 +1,37 @@
+import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { ChevronDown, LayoutDashboard, LogOut, Search, UserRound, ReceiptText } from 'lucide-react'
+import { ChevronDown, Languages, LayoutDashboard, LogOut, Search, UserRound, ReceiptText } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import footerBanner from '../../assets/logo-banners/footbanner.png'
 import logo from '../../assets/logo-banners/logo.png'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm font-semibold ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`
+
+type LanguageCode = 'vi' | 'en'
+
+const languages: Array<{ code: LanguageCode; label: string; flag: string }> = [
+  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+]
+
+function LanguageSwitcher() {
+  const [language, setLanguage] = useState<LanguageCode>('vi')
+  const current = languages.find((item) => item.code === language) ?? languages[0]
+
+  return <details className="group relative">
+    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-text-secondary hover:bg-primary-soft hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden" aria-label="Chọn ngôn ngữ">
+      <Languages size={18} aria-hidden="true" />
+      <span aria-hidden="true">{current.flag}</span>
+      <span className="hidden sm:inline">{current.code.toUpperCase()}</span>
+      <ChevronDown className="transition-transform group-open:rotate-180" size={16} aria-hidden="true" />
+    </summary>
+    <div className="absolute right-0 top-full z-20 mt-2 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-lg shadow-slate-900/10">
+      <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Ngôn ngữ</p>
+      {languages.map((item) => <button key={item.code} type="button" aria-pressed={language === item.code} onClick={(event) => { setLanguage(item.code); event.currentTarget.closest('details')?.removeAttribute('open') }} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium transition-colors ${language === item.code ? 'bg-primary-soft text-primary' : 'text-text-primary hover:bg-primary-soft'}`}><span aria-hidden="true">{item.flag}</span><span>{item.label}</span></button>)}
+    </div>
+  </details>
+}
 
 function dashboardPath(roles: string[]): string {
   if (roles.includes('SUPER_ADMIN') || roles.includes('CINEMA_MANAGER')) return '/admin'
@@ -63,6 +89,7 @@ export function CustomerShell() {
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" />
             <input type="search" aria-label="Tìm phim hoặc rạp" placeholder="Tìm phim, rạp..." className="min-h-10 w-full rounded-full border border-border bg-background py-2 pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </div>
+          <LanguageSwitcher />
           {user ? (
             <>
               <NavLink className={linkClass} to="/me/tickets">Vé của tôi</NavLink>

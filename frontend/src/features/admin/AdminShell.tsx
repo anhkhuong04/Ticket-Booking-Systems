@@ -148,7 +148,7 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
 
 function Sidebar({ mobile = false, onClose }: { mobile?: boolean; onClose?: () => void }) {
   return (
-    <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen flex-col border-r border-border bg-surface lg:flex'}>
+    <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-surface lg:flex'}>
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5">
         <Link to="/admin" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="LAK Admin - Dashboard">
           <img src={logo} alt="LAK" className="h-10 w-24 object-contain object-left" />
@@ -157,7 +157,7 @@ function Sidebar({ mobile = false, onClose }: { mobile?: boolean; onClose?: () =
         {mobile && <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-xl text-text-secondary hover:bg-slate-50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="Đóng menu"><X size={20} aria-hidden="true" /></button>}
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-5">
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">Quản lý</p>
+        <p className="mb-4 px-3 text-sm font-bold uppercase tracking-[0.22em] text-text-muted">Quản lý</p>
         <SidebarNav onNavigate={onClose} />
       </div>
       <div className="border-t border-border px-4 py-4">
@@ -174,7 +174,7 @@ export function AdminShell() {
   const title = getPageTitle(pathname)
 
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu quản trị">
@@ -182,7 +182,7 @@ export function AdminShell() {
           <div className="relative h-full"><Sidebar mobile onClose={() => setMobileOpen(false)} /></div>
         </div>
       )}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">

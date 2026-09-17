@@ -3,8 +3,25 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { forgotPassword, resetPassword } from './authApi'
 import { useAuth } from './AuthProvider'
+import logo from '../../assets/logo-banners/logo.png'
 
-function AuthCard({ title, children }: { title: string; children: React.ReactNode }) { return <main className="grid min-h-screen place-items-center bg-background p-4"><section className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"><Link to="/" className="text-lg font-bold text-primary">LAK</Link><h1 className="mt-6 text-2xl font-bold text-text-primary">{title}</h1>{children}</section></main> }
+function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
+  const loginLayout = title === 'Đăng nhập'
+  if (loginLayout) {
+    return <main className="relative min-h-screen overflow-hidden bg-slate-950 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/posters/bg-login.png')" }}>
+      <div className="absolute inset-0 bg-slate-950/25" aria-hidden="true" />
+      <section className="relative flex min-h-screen w-full max-w-xl items-center bg-white/95 px-6 py-8 shadow-2xl backdrop-blur-sm sm:px-12 lg:w-[min(100%,520px)] lg:rounded-r-[2rem]">
+        <div className="mx-auto w-full max-w-md">
+          <Link to="/" className="inline-flex rounded-lg focus-visible:outline-2 focus-visible:outline-info" aria-label="LAK Cinema - Trang chủ"><img src={logo} alt="LAK Cinema" className="h-16 w-48 object-contain object-left" /></Link>
+          <h1 className="mt-8 text-3xl font-bold tracking-tight text-text-primary">{title}</h1>
+          <p className="mt-3 max-w-sm text-sm leading-6 text-text-secondary">Chào mừng bạn trở lại! Đăng nhập để tiếp tục đặt vé và khám phá những bộ phim hấp dẫn tại LAK.</p>
+          {children}
+        </div>
+      </section>
+    </main>
+  }
+  return <main className="grid min-h-screen place-items-center bg-background p-4"><section className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"><Link to="/" className="text-lg font-bold text-primary">LAK</Link><h1 className="mt-6 text-2xl font-bold text-text-primary">{title}</h1>{children}</section></main>
+}
 function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const id = props.name
   const autoComplete = props.name === 'email' && props.autoComplete === 'email' ? 'username' : props.autoComplete

@@ -46,6 +46,7 @@ export async function uploadMovieMedia(file: File) {
   data.set('signature', signed.signature)
   data.set('folder', signed.folder)
   const response = await fetch(`https://api.cloudinary.com/v1_1/${signed.cloudName}/${signed.resourceType}/upload`, { method: 'POST', body: data })
+  if (response.status === 401) throw new Error('Cloudinary từ chối xác thực upload. Kiểm tra cloud name, API key và secret trong .env, rồi khởi động lại backend.')
   if (!response.ok) throw new Error('Không thể tải tệp lên.')
   const body: unknown = await response.json()
   if (!body || typeof body !== 'object' || !('secure_url' in body) || typeof body.secure_url !== 'string') {

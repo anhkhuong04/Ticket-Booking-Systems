@@ -42,6 +42,8 @@ Copy-Item .env.example .env
 
 Đổi các giá trị bí mật mẫu trong `.env` (đặc biệt password PostgreSQL/Redis và `JWT_HMAC_SECRET`), rồi chạy trên Windows:
 
+Để tải poster/trailer lên Cloudinary, đặt `CLOUDINARY_ENABLED=true` và cung cấp `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` trong `.env`, sau đó khởi động lại backend. Nếu tắt cấu hình này, API sẽ trả `MEDIA_UPLOAD_DISABLED`. Mỗi tệp tối đa 3 MiB theo cấu hình hiện tại.
+
 ```powershell
 .\scripts\dev.ps1 doctor
 .\scripts\dev.ps1 up

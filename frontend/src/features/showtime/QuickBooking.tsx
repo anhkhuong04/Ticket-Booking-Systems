@@ -95,7 +95,7 @@ export function QuickBooking({ overlapHero = false }: { overlapHero?: boolean })
     setShowtimes(value ? { kind: 'loading' } : { kind: 'idle' })
   }
 
-  return <section className={`relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${overlapHero ? '-mt-20 sm:-mt-24' : 'mt-8'}`} aria-labelledby="quick-booking-title">
+  return <section className={`relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${overlapHero ? '-mt-10 sm:-mt-14' : 'mt-8'}`} aria-labelledby="quick-booking-title">
     <div className="rounded-xl border border-border bg-surface p-5 shadow-lg shadow-slate-900/10 sm:p-6">
       <div className="flex items-start gap-3">
         <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary" aria-hidden="true"><Ticket size={22} /></span>

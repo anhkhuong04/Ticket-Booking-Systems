@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { ChevronDown, LayoutDashboard, LogOut, UserRound, ReceiptText } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, Search, UserRound, ReceiptText } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import footerBanner from '../../assets/logo-banners/footbanner.png'
 import logo from '../../assets/logo-banners/logo.png'
@@ -58,6 +58,10 @@ export function CustomerShell() {
           <div className="flex flex-1 items-center gap-4">
             <NavLink className={linkClass} to="/movies">Phim</NavLink>
             <NavLink className={linkClass} to="/cinemas">Rạp</NavLink>
+          </div>
+          <div className="relative hidden min-w-0 flex-1 md:block md:max-w-md" role="search">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} aria-hidden="true" />
+            <input type="search" aria-label="Tìm phim hoặc rạp" placeholder="Tìm phim, rạp..." className="min-h-10 w-full rounded-full border border-border bg-background py-2 pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </div>
           {user ? (
             <>

@@ -102,7 +102,7 @@ app:
       max-upload-megabytes: ${CLOUDINARY_MAX_UPLOAD_MEGABYTES:3}
   auth:
     jwt-hmac-secret: ${JWT_HMAC_SECRET}
-    access-token-ttl: ${ACCESS_TOKEN_TTL:15m}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:30m}
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:7d}
     password-reset-token-ttl: ${PASSWORD_RESET_TOKEN_TTL:30m}
     password-reset-url: ${PASSWORD_RESET_URL:http://localhost:5173/reset-password}

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Building2,
+  BarChart3,
+  BadgePercent,
   CalendarDays,
   ChevronDown,
   Clapperboard,
@@ -19,12 +21,14 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
+import logo from '../../assets/logo-banners/logo.png'
 
 type AdminNavItem = {
   to: string
   label: string
   icon: LucideIcon
   end?: boolean
+  disabled?: boolean
 }
 
 const navItems: AdminNavItem[] = [
@@ -36,7 +40,9 @@ const navItems: AdminNavItem[] = [
   { to: '/admin/bookings', label: 'Booking', icon: Ticket },
   { to: '/admin/payments', label: 'Thanh toán', icon: CreditCard },
   { to: '/admin/refunds', label: 'Hoàn tiền', icon: ReceiptText },
+  { to: '/admin/vouchers', label: 'Voucher', icon: BadgePercent, disabled: true },
   { to: '/admin/users', label: 'Người dùng', icon: UsersRound },
+  { to: '/admin/reports', label: 'Báo cáo', icon: BarChart3, disabled: true },
 ]
 
 const pageTitles = new Map(navItems.map((item) => [item.to, item.label]))
@@ -63,7 +69,18 @@ function getPageTitle(pathname: string): string {
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1" aria-label="Điều hướng quản trị">
-      {navItems.map(({ to, label, icon: Icon, end }) => (
+      {navItems.map(({ to, label, icon: Icon, end, disabled }) => (
+        disabled ? (
+          <span
+            key={to}
+            title="Màn hình chưa có API quản trị"
+            aria-disabled="true"
+            className="group flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-xl px-3.5 text-sm font-semibold text-text-muted/70"
+          >
+            <Icon size={19} aria-hidden="true" />
+            <span className="truncate">{label}</span>
+          </span>
+        ) : (
         <NavLink
           key={to}
           to={to}
@@ -90,6 +107,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             </>
           )}
         </NavLink>
+        )
       ))}
     </nav>
   )
@@ -133,11 +151,8 @@ function Sidebar({ mobile = false, onClose }: { mobile?: boolean; onClose?: () =
     <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen flex-col border-r border-border bg-surface lg:flex'}>
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5">
         <Link to="/admin" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="LAK Admin - Dashboard">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-sm font-bold text-white">LAK</span>
-          <span>
-            <span className="block text-sm font-bold tracking-wide">LAK ADMIN</span>
-            <span className="block text-[10px] font-medium uppercase tracking-[0.16em] text-text-muted">Cinema operations</span>
-          </span>
+          <img src={logo} alt="LAK" className="h-10 w-24 object-contain object-left" />
+          <span className="text-sm font-bold tracking-[0.18em] text-text-primary">ADMIN</span>
         </Link>
         {mobile && <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-xl text-text-secondary hover:bg-slate-50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="Đóng menu"><X size={20} aria-hidden="true" /></button>}
       </div>

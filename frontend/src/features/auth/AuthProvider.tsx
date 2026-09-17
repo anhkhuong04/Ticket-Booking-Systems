@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { isAxiosError } from 'axios'
+import { localizeApiError } from '../../shared/i18n/apiError'
 import { initializeCsrf, login as loginRequest, logout as logoutRequest, refresh, register as registerRequest, type AuthUser } from './authApi'
 import { setAccessToken } from '../../shared/api/apiClient'
 
@@ -10,10 +10,7 @@ type AuthContextValue = {
 }
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function messageFor(error: unknown): string {
-  if (isAxiosError<{ message?: string }>(error)) return error.response?.data?.message ?? 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.'
-  return 'Không thể kết nối tới hệ thống. Vui lòng thử lại.'
-}
+function messageFor(error: unknown): string { return localizeApiError(error) }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null); const [ready, setReady] = useState(false)

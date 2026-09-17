@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../../i18n'
 import { AdminDashboardPage } from './AdminDashboardPage'
 import { getAdminCinemas, getReportSummary, type ReportSummary } from './adminApi'
 import { useAuth } from '../auth/AuthProvider'
@@ -22,7 +23,20 @@ const report: ReportSummary = {
 }
 
 describe('AdminDashboardPage', () => {
+  beforeEach(async () => { await i18n.changeLanguage('vi') })
   afterEach(() => { cleanup(); cinemas.mockReset(); summary.mockReset(); auth.mockReset() })
+
+  it('formats VND and report labels in English', async () => {
+    await i18n.changeLanguage('en')
+    auth.mockReturnValue({ user: { id: 'admin', fullName: 'Admin', email: 'admin@lak.vn', roles: ['SUPER_ADMIN'] }, ready: true, login: vi.fn(), register: vi.fn(), logout: vi.fn(), updateDisplayName: vi.fn() })
+    cinemas.mockResolvedValue([])
+    summary.mockResolvedValue(report)
+    render(<MemoryRouter initialEntries={['/admin?from=2026-09-17&to=2026-09-17']}><AdminDashboardPage /></MemoryRouter>)
+    expect(await screen.findByText('Operational alerts')).toBeInTheDocument()
+    expect(screen.getByText('Net revenue')).toBeInTheDocument()
+    expect(screen.getAllByText(/₫|VND/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: /Payment review/ })).toBeInTheDocument()
+  })
 
   it('uses seat units, separates current alerts, and displays top movies and period comparison', async () => {
     auth.mockReturnValue({ user: { id: 'admin', fullName: 'Admin', email: 'admin@lak.vn', roles: ['SUPER_ADMIN'] },

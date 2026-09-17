@@ -21,6 +21,9 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
+import { LanguageSwitcher } from '../../shared/i18n/LanguageSwitcher'
 import logo from '../../assets/logo-banners/logo.png'
 
 type AdminNavItem = {
@@ -33,16 +36,16 @@ type AdminNavItem = {
 
 const navItems: AdminNavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/movies', label: 'Phim', icon: Clapperboard },
-  { to: '/admin/cinemas', label: 'Rạp & phòng', icon: Building2 },
-  { to: '/admin/showtimes', label: 'Suất chiếu', icon: CalendarDays },
-  { to: '/admin/pricing', label: 'Bảng giá', icon: Tags },
-  { to: '/admin/bookings', label: 'Booking', icon: Ticket },
-  { to: '/admin/payments', label: 'Thanh toán', icon: CreditCard },
-  { to: '/admin/refunds', label: 'Hoàn tiền', icon: ReceiptText },
+  { to: '/admin/movies', label: 'movies', icon: Clapperboard },
+  { to: '/admin/cinemas', label: 'adminCinemas', icon: Building2 },
+  { to: '/admin/showtimes', label: 'adminShowtimes', icon: CalendarDays },
+  { to: '/admin/pricing', label: 'adminPricing', icon: Tags },
+  { to: '/admin/bookings', label: 'adminBookings', icon: Ticket },
+  { to: '/admin/payments', label: 'adminPayments', icon: CreditCard },
+  { to: '/admin/refunds', label: 'adminRefunds', icon: ReceiptText },
   { to: '/admin/vouchers', label: 'Voucher', icon: BadgePercent, disabled: true },
-  { to: '/admin/users', label: 'Người dùng', icon: UsersRound },
-  { to: '/admin/reports', label: 'Báo cáo', icon: BarChart3, disabled: true },
+  { to: '/admin/users', label: 'adminUsers', icon: UsersRound },
+  { to: '/admin/reports', label: 'adminReports', icon: BarChart3, disabled: true },
 ]
 
 const pageTitles = new Map(navItems.map((item) => [item.to, item.label]))
@@ -50,7 +53,7 @@ const pageTitles = new Map(navItems.map((item) => [item.to, item.label]))
 function roleLabel(roles: string[]): string {
   if (roles.includes('SUPER_ADMIN')) return 'Super Admin'
   if (roles.includes('CINEMA_MANAGER')) return 'Cinema Manager'
-  return 'Quản trị viên'
+  return i18n.t('adminRole')
 }
 
 function initials(name: string | undefined): string {
@@ -61,24 +64,25 @@ function initials(name: string | undefined): string {
 
 function getPageTitle(pathname: string): string {
   const exact = pageTitles.get(pathname)
-  if (exact) return exact
-  if (pathname.startsWith('/admin/cinemas/')) return 'Sơ đồ ghế'
-  return 'Quản trị LAK'
+  if (exact) return i18n.t(exact)
+  if (pathname.startsWith('/admin/cinemas/')) return i18n.t('adminSeatMap')
+  return i18n.t('adminTitle')
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslation()
   return (
-    <nav className="flex flex-col gap-1" aria-label="Điều hướng quản trị">
+    <nav className="flex flex-col gap-1" aria-label={t('adminNavigation')}>
       {navItems.map(({ to, label, icon: Icon, end, disabled }) => (
         disabled ? (
           <span
             key={to}
-            title="Màn hình chưa có API quản trị"
+            title={t('adminUnavailable')}
             aria-disabled="true"
             className="group flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-xl px-3.5 text-sm font-semibold text-text-muted/70"
           >
             <Icon size={19} aria-hidden="true" />
-            <span className="truncate">{label}</span>
+            <span className="truncate">{label === 'Dashboard' || label === 'Voucher' ? label : t(label)}</span>
           </span>
         ) : (
         <NavLink
@@ -102,7 +106,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 aria-hidden="true"
                 className={isActive ? 'text-primary' : 'text-slate-400 transition-colors group-hover:text-primary'}
               />
-              <span className="truncate">{label}</span>
+              <span className="truncate">{label === 'Dashboard' || label === 'Voucher' ? label : t(label)}</span>
               {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />}
             </>
           )}
@@ -114,8 +118,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function AccountMenu({ onLogout }: { onLogout: () => void }) {
+  const { t } = useTranslation()
   const { user } = useAuth()
-  const name = user?.fullName ?? 'Tài khoản quản trị'
+  const name = user?.fullName ?? t('adminAccount')
   const role = roleLabel(user?.roles ?? [])
 
   return (
@@ -135,11 +140,11 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
         </div>
         <Link to="/" className="mt-1 flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-text-primary hover:bg-primary-soft hover:text-primary focus-visible:outline-2 focus-visible:outline-primary">
           <ExternalLink size={17} aria-hidden="true" />
-          Xem website
+          {t('adminViewWebsite')}
         </Link>
         <button type="button" onClick={onLogout} className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-medium text-text-primary hover:bg-primary-soft hover:text-primary focus-visible:outline-2 focus-visible:outline-primary">
           <LogOut size={17} aria-hidden="true" />
-          Đăng xuất
+          {t('signOut')}
         </button>
       </div>
     </details>
@@ -147,27 +152,29 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
 }
 
 function Sidebar({ mobile = false, onClose }: { mobile?: boolean; onClose?: () => void }) {
+  const { t } = useTranslation()
   return (
     <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen w-60 shrink-0 self-start flex-col border-r border-border bg-surface lg:flex'}>
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5">
-        <Link to="/" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="LAK Cinema - Trang chủ">
+        <Link to="/" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label={`LAK Cinema - ${t('home')}`}>
           <img src={logo} alt="LAK" className="h-10 w-24 object-contain object-left" />
           <span className="text-sm font-bold tracking-[0.18em] text-text-primary">ADMIN</span>
         </Link>
-        {mobile && <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-xl text-text-secondary hover:bg-slate-50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="Đóng menu"><X size={20} aria-hidden="true" /></button>}
+        {mobile && <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-xl text-text-secondary hover:bg-slate-50 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label={t('adminCloseMenu')}><X size={20} aria-hidden="true" /></button>}
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-5">
-        <p className="mb-4 px-3 text-sm font-bold uppercase tracking-[0.22em] text-text-muted">Quản lý</p>
+        <p className="mb-4 px-3 text-sm font-bold uppercase tracking-[0.22em] text-text-muted">{t('adminManagement')}</p>
         <SidebarNav onNavigate={onClose} />
       </div>
       <div className="border-t border-border px-4 py-4">
-        <p className="flex items-center gap-2 text-xs text-text-muted"><Settings2 size={15} aria-hidden="true" /> Dữ liệu theo phân quyền</p>
+        <p className="flex items-center gap-2 text-xs text-text-muted"><Settings2 size={15} aria-hidden="true" /> {t('adminScopedData')}</p>
       </div>
     </aside>
   )
 }
 
 export function AdminShell() {
+  const { t } = useTranslation()
   const { logout } = useAuth()
   const { pathname } = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -177,8 +184,8 @@ export function AdminShell() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu quản trị">
-          <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-slate-950/30" aria-label="Đóng menu quản trị" />
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t('adminMenu')}>
+          <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-slate-950/30" aria-label={t('adminCloseMenu')} />
           <div className="relative h-full"><Sidebar mobile onClose={() => setMobileOpen(false)} /></div>
         </div>
       )}
@@ -186,13 +193,14 @@ export function AdminShell() {
         <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
-              <button type="button" onClick={() => setMobileOpen(true)} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border text-text-secondary hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary lg:hidden" aria-label="Mở menu quản trị"><Menu size={20} aria-hidden="true" /></button>
+              <button type="button" onClick={() => setMobileOpen(true)} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border text-text-secondary hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary lg:hidden" aria-label={t('adminOpenMenu')}><Menu size={20} aria-hidden="true" /></button>
               <div className="min-w-0">
                 <p className="hidden text-xs font-medium text-text-muted sm:block">LAK Admin / {title}</p>
                 <h1 className="truncate text-lg font-bold text-text-primary sm:text-xl">{title}</h1>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+              <LanguageSwitcher />
               <AccountMenu onLogout={() => void logout()} />
             </div>
           </div>

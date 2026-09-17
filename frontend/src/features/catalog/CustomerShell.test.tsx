@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CustomerShell } from './CustomerShell'
 import { useAuth } from '../auth/AuthProvider'
+import i18n, { LANGUAGE_KEY } from '../../i18n'
 
 vi.mock('../auth/AuthProvider', () => ({ useAuth: vi.fn() }))
 
@@ -22,7 +23,8 @@ function renderShell() {
 describe('CustomerShell', () => {
   afterEach(cleanup)
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('vi')
     logout.mockClear()
     mockedUseAuth.mockReturnValue({ user: { id: 'user-1', email: 'customer@lak.vn', fullName: 'Khách hàng', roles: ['CUSTOMER'] }, ready: true, login: vi.fn(), register: vi.fn(), logout, updateDisplayName: vi.fn() })
   })
@@ -43,5 +45,15 @@ describe('CustomerShell', () => {
 
     fireEvent.click(screen.getByText('Tài khoản'))
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/admin')
+  })
+
+  it('changes the customer navigation to English and remembers the choice', async () => {
+    renderShell()
+    fireEvent.click(screen.getByText('Ngôn ngữ'))
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+
+    expect(await screen.findByRole('link', { name: 'Movies' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('en')
+    expect(window.localStorage.getItem(LANGUAGE_KEY)).toBe('en')
   })
 })

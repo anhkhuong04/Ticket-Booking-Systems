@@ -1262,22 +1262,22 @@ Frontend guard chỉ hỗ trợ UX. Backend phải kiểm tra role và cinema sc
 | Metric | Cách tính và mốc thời gian |
 |---|---|
 | Doanh thu ròng | Tổng payment đã xác minh thành công theo `paidAt` trong kỳ trừ refund `REFUNDED` theo `refundedAt` trong kỳ; VND số nguyên. Không tính initiated/pending/failed hoặc refund chưa hoàn tất. |
-| Booking thành công | Số `booking_id` duy nhất có payment được backend xác minh `SUCCESS` theo `paidAt` trong kỳ. Booking đã hoàn tiền vẫn thuộc số giao dịch thành công lịch sử; không tính retry/payment trùng. |
-| Vé đã bán | Số ticket `VALID` hoặc `USED` gắn với giao dịch đã chốt trong kỳ; ticket `CANCELLED` không được tính. |
-| Tỷ lệ lấp đầy | `Số ghế SOLD của các suất bắt đầu trong kỳ / tổng ghế bán được của chính các suất đó × 100`; mẫu số 0 hiển thị `0%` và không chia cho 0. |
-| Booking cần xử lý | Snapshot hiện tại của booking `PENDING_PAYMENT`, `PAYMENT_REVIEW` hoặc `REFUND_PENDING` trong cinema scope; gắn nhãn `Hiện tại`. |
-| Refund cần chú ý | Snapshot hiện tại của refund `REFUND_FAILED` cần manual review trong cinema scope; gắn nhãn `Hiện tại`. |
+| Booking thành công | Số payment `SUCCESS` duy nhất theo `paidAt` trong kỳ; unique index bảo đảm mỗi booking tối đa một payment thành công. Booking đã hoàn tiền vẫn thuộc số giao dịch thành công lịch sử. |
+| Ghế đã bán | Tổng `booking_items` của booking có payment `SUCCESS` theo `paidAt` trong kỳ. Đây là số ghế bán gộp theo giao dịch, không giảm khi refund về sau và không đếm ticket entity (một ticket có thể gồm nhiều ghế). |
+| Tỷ lệ lấp đầy | Snapshot `SOLD / số ghế không BLOCKED` của các suất `SCHEDULED` bắt đầu trong kỳ × 100; suất `CANCELLED` bị loại. Mẫu số 0 hiển thị `0%`. |
+| Operational Alerts | Snapshot hiện tại theo cinema scope, không phụ thuộc date range: `PAYMENT_REVIEW`, `PENDING_PAYMENT` quá `payment_deadline`, refund `REQUESTED` quá SLA, `REFUND_FAILED`, suất hủy còn booking chưa chốt, booking `PAID` thiếu ticket. Tổng booking cần chú ý đếm mỗi booking một lần dù thuộc nhiều nhóm. |
 
 Nếu read model backend dùng một mốc thời gian khác, API contract và tài liệu này phải được cập nhật cùng nhau. Frontend không tự tính lại KPI từ danh sách phân trang.
 
 ## Widgets and drill-down
 
-- KPI cards: doanh thu ròng, booking thành công, vé đã bán, tỷ lệ lấp đầy, booking cần xử lý, refund cần chú ý.
-- Revenue chart dùng cùng date/cinema filter; mỗi điểm có label ngày theo `Asia/Ho_Chi_Minh`, doanh thu ròng và số vé.
-- Top movies xếp theo doanh thu ròng, có số vé làm chỉ số phụ.
-- Top showtimes xếp theo doanh thu ròng hoặc tỷ lệ lấp đầy và phải ghi rõ tiêu chí đang dùng.
-- Click KPI/list dẫn tới màn quản trị tương ứng và mang theo filter hợp lệ; Dashboard không cung cấp thao tác sửa trực tiếp dữ liệu giao dịch.
-- Không dựng Top Movies/Top Showtimes bằng cách cộng dữ liệu từ bảng phân trang. Nếu API chưa trả read model tương ứng, ẩn widget với trạng thái `Chưa có dữ liệu` thay vì mock.
+- KPI cards: doanh thu ròng, booking thành công, ghế đã bán, tỷ lệ lấp đầy. Ba KPI giao dịch đầu có delta với kỳ liền trước cùng số ngày; khi mẫu kỳ trước ≤ 0 chỉ hiển thị giá trị nền, không tính phần trăm gây hiểu nhầm.
+- Operational Alerts đứng trước phần phân tích, ghi nhãn `Hiện tại`; `PENDING_PAYMENT` còn hạn không phải cảnh báo. SLA refund mặc định 24 giờ từ `requested_at`, cấu hình bằng `app.reporting.refund-sla-hours`.
+- Revenue chart dùng cùng date/cinema filter; mỗi điểm có ngày theo `Asia/Ho_Chi_Minh`, doanh thu ròng và số ghế. Với tùy chọn > 30 ngày, UI chỉ vẽ 30 ngày cuối và ghi rõ phạm vi hiển thị; API vẫn trả đủ ngày để reconciliation.
+- Top Movies xếp theo doanh thu ròng trong kỳ, có số ghế bán gộp làm chỉ số phụ. Refund hôm nay của giao dịch kỳ trước có thể khiến doanh thu phim trong kỳ âm.
+- Không đặt Top Showtimes trên Dashboard; Reports là nơi phân tích suất chiếu.
+- Click Operational Alert dẫn tới danh sách booking/refund với `exception`, `status`, `overdue` và `cinemaId` tương ứng; backend áp lại cinema scope và cùng ngưỡng SLA. Dashboard không cung cấp thao tác sửa trực tiếp dữ liệu giao dịch.
+- Không dựng Top Movies từ bảng phân trang. Widget dùng cùng reporting read model với KPI.
 
 ## Loading, empty, error and reconciliation
 
@@ -1289,15 +1289,7 @@ Nếu read model backend dùng một mốc thời gian khác, API contract và t
 
 ## API readiness
 
-`GET /api/admin/reports/summary` hiện hỗ trợ `from`, `to`, `cinemaId`, các KPI tổng và chuỗi ngày. Để hoàn thiện toàn bộ Dashboard theo spec, reporting read model cần:
-
-- thống nhất mốc thời gian `paidAt`/`refundedAt` và bảo đảm `daily.netRevenue` reconciliation với `netRevenue`;
-- thống nhất trường `bookings` theo định nghĩa booking thành công và đếm distinct để retry không làm tăng số liệu;
-- tách KPI theo kỳ khỏi operational backlog hiện tại;
-- trả `asOf` để hiển thị thời điểm cập nhật;
-- bổ sung Top Movies và Top Showtimes hoặc endpoint reporting riêng có cùng scope/filter.
-
-Những phần chưa có contract API phải hiển thị unavailable/empty state và không được tính từ các API danh sách phân trang.
+`GET /api/admin/reports/summary` trả `netRevenue`, `bookings`, `seatsSold`, `occupancyPercent`, `previousPeriod`, `daily`, `alerts`, `topMovies`, `asOf`. `from`/`to` là ngày bao gồm theo giờ Việt Nam. Revenue dùng payment `paid_at` trừ refund `refunded_at`; `daily` được điền cả ngày không giao dịch và tổng bằng KPI. `alerts` là snapshot tại `asOf`, chỉ theo cinema scope. Manager không có cinema assignment bị từ chối; scope rỗng không được diễn giải là toàn hệ thống ngoại trừ `SUPER_ADMIN`.
 
 Không hiển thị chart nếu metric đơn giản có thể trình bày rõ hơn bằng KPI card hoặc danh sách.
 
@@ -1479,7 +1471,7 @@ Core report dimensions:
 Core metrics:
 
 - revenue;
-- tickets sold;
+- seats sold (gross units from paid booking items, not ticket entities);
 - bookings;
 - occupancy.
 

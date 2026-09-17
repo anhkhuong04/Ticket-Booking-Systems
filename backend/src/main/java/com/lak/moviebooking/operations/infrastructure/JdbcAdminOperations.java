@@ -3,10 +3,13 @@ package com.lak.moviebooking.operations.infrastructure;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,34 +23,48 @@ import com.lak.moviebooking.operations.application.AdminPaymentView;
 import com.lak.moviebooking.operations.application.AdminRefundView;
 import com.lak.moviebooking.operations.application.AdminUserView;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 class JdbcAdminOperations implements AdminOperations {
-    private final JdbcTemplate jdbc; private final AuditLogWriter audit; private final Clock clock;
-    JdbcAdminOperations(JdbcTemplate jdbc, AuditLogWriter audit, Clock clock) { this.jdbc = jdbc; this.audit = audit; this.clock = clock; }
+    private final JdbcTemplate jdbc; private final AuditLogWriter audit; private final Clock clock; private final Duration refundSla;
+    JdbcAdminOperations(JdbcTemplate jdbc, AuditLogWriter audit, Clock clock,
+                        @Value("${app.reporting.refund-sla-hours:24}") long refundSlaHours) {
+        this.jdbc = jdbc; this.audit = audit; this.clock = clock;
+        if (refundSlaHours < 1) throw new IllegalArgumentException("Refund SLA must be positive");
+        this.refundSla = Duration.ofHours(refundSlaHours);
+    }
 
-    @Override public List<AdminBookingView> bookings(String query, String status, UUID cinemaId, LocalDate date, Set<UUID> scope) {
+    @Override public List<AdminBookingView> bookings(String query, String status, String exception, UUID cinemaId, LocalDate date, Set<UUID> scope) {
+        List<Object> args = new ArrayList<>();
+        Collections.addAll(args, scopeArray(scope),scopeArray(scope), status,status,cinemaId,cinemaId,date,date,
+                blank(query),like(query),like(query),like(query));
+        String exceptionCondition = bookingExceptionSql(exception, args);
         return jdbc.query("""
                 SELECT b.id,b.booking_code,u.full_name,u.email,c.id cinema_id,c.name cinema_name,m.title,st.start_at,b.total_amount,b.status,b.created_at
                 FROM bookings b JOIN users u ON u.id=b.user_id JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id JOIN movies m ON m.id=st.movie_id
-                WHERE (%s) AND (? IS NULL OR b.status=?) AND (? IS NULL OR c.id=?) AND (? IS NULL OR (st.start_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?)
-                AND (? IS NULL OR b.booking_code ILIKE ? OR u.email ILIKE ? OR COALESCE(u.phone,'') ILIKE ?) ORDER BY b.created_at DESC LIMIT 200""".formatted(scopeSql(scope)), this::booking,
-                scopeArray(scope),scopeArray(scope), status,status,cinemaId,cinemaId,date,date, blank(query),like(query),like(query),like(query)); }
+                WHERE (%s) AND (CAST(? AS text) IS NULL OR b.status=?) AND (CAST(? AS uuid) IS NULL OR c.id=?) AND (CAST(? AS date) IS NULL OR (st.start_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?)
+                AND (CAST(? AS text) IS NULL OR b.booking_code ILIKE ? OR u.email ILIKE ? OR COALESCE(u.phone,'') ILIKE ?)
+                AND (%s) ORDER BY b.created_at DESC LIMIT 200""".formatted(scopeSql(scope), exceptionCondition),
+                this::booking, args.toArray()); }
     @Override public List<AdminPaymentView> payments(String query, String status, UUID cinemaId, LocalDate date, Set<UUID> scope) {
         return jdbc.query("""
                 SELECT p.id,b.booking_code,c.id cinema_id,c.name cinema_name,p.provider,p.provider_transaction_id,p.amount,p.status,p.created_at,p.paid_at
                 FROM payments p JOIN bookings b ON b.id=p.booking_id JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id
-                WHERE (%s) AND (? IS NULL OR p.status=?) AND (? IS NULL OR c.id=?) AND (? IS NULL OR (p.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?)
-                AND (? IS NULL OR b.booking_code ILIKE ? OR p.provider_transaction_id ILIKE ?) ORDER BY p.created_at DESC LIMIT 200""".formatted(scopeSql(scope)), this::payment,
+                WHERE (%s) AND (CAST(? AS text) IS NULL OR p.status=?) AND (CAST(? AS uuid) IS NULL OR c.id=?) AND (CAST(? AS date) IS NULL OR (p.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?)
+                AND (CAST(? AS text) IS NULL OR b.booking_code ILIKE ? OR p.provider_transaction_id ILIKE ?) ORDER BY p.created_at DESC LIMIT 200""".formatted(scopeSql(scope)), this::payment,
                 scopeArray(scope),scopeArray(scope), status,status,cinemaId,cinemaId,date,date,blank(query),like(query),like(query)); }
-    @Override public List<AdminRefundView> refunds(String status, UUID cinemaId, LocalDate date, Set<UUID> scope) {
+    @Override public List<AdminRefundView> refunds(String status, boolean overdue, UUID cinemaId, LocalDate date, Set<UUID> scope) {
         return jdbc.query("""
                 SELECT r.id,b.booking_code,c.id cinema_id,c.name cinema_name,r.amount,r.reason,r.status,r.attempt_count,r.requested_at,r.refunded_at
                 FROM refunds r JOIN bookings b ON b.id=r.booking_id JOIN showtimes st ON st.id=b.showtime_id JOIN auditoriums a ON a.id=st.auditorium_id JOIN cinemas c ON c.id=a.cinema_id
-                WHERE (%s) AND (? IS NULL OR r.status=?) AND (? IS NULL OR c.id=?) AND (? IS NULL OR (r.requested_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?) ORDER BY r.requested_at DESC LIMIT 200""".formatted(scopeSql(scope)), this::refund,
-                scopeArray(scope),scopeArray(scope), status,status,cinemaId,cinemaId,date,date); }
+                WHERE (%s) AND (CAST(? AS text) IS NULL OR r.status=?) AND (CAST(? AS uuid) IS NULL OR c.id=?) AND (CAST(? AS date) IS NULL OR (r.requested_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=?)
+                  AND (? = FALSE OR (r.status='REQUESTED' AND r.requested_at<?))
+                ORDER BY r.requested_at DESC LIMIT 200""".formatted(scopeSql(scope)), this::refund,
+                scopeArray(scope),scopeArray(scope), status,status,cinemaId,cinemaId,date,date,
+                overdue, at(clock.instant().minus(refundSla))); }
     @Override public List<AdminUserView> users(String query) {
         return jdbc.query("""
                 SELECT u.id,u.full_name,u.email,u.phone,u.status,u.created_at,
@@ -55,8 +72,8 @@ class JdbcAdminOperations implements AdminOperations {
                 COALESCE(array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL),'{}') cinemas
                 FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles role ON role.id=ur.role_id
                 LEFT JOIN staff_cinema_assignments sca ON sca.user_id=u.id LEFT JOIN cinemas c ON c.id=sca.cinema_id
-                WHERE (? IS NULL OR u.email ILIKE ? OR u.full_name ILIKE ? OR COALESCE(u.phone,'') ILIKE ?) GROUP BY u.id ORDER BY u.created_at DESC LIMIT 200""", this::user, blank(query),like(query),like(query),like(query)); }
-    @Override public AdminRefundView refund(UUID refundId, Set<UUID> scope) { return refunds(null,null,null,scope).stream().filter(value -> value.id().equals(refundId)).findFirst().orElseThrow(() -> ApplicationException.notFound("ADMIN_REFUND_NOT_FOUND", "Refund was not found")); }
+                WHERE (CAST(? AS text) IS NULL OR u.email ILIKE ? OR u.full_name ILIKE ? OR COALESCE(u.phone,'') ILIKE ?) GROUP BY u.id ORDER BY u.created_at DESC LIMIT 200""", this::user, blank(query),like(query),like(query),like(query)); }
+    @Override public AdminRefundView refund(UUID refundId, Set<UUID> scope) { return refunds(null,false,null,null,scope).stream().filter(value -> value.id().equals(refundId)).findFirst().orElseThrow(() -> ApplicationException.notFound("ADMIN_REFUND_NOT_FOUND", "Refund was not found")); }
     @Override @Transactional public void retryFailedRefund(UUID actorId, UUID refundId, Set<UUID> scope) {
         AdminRefundView value=refund(refundId,scope); Instant now=clock.instant(); int updated=jdbc.update("UPDATE refunds SET status='REQUESTED',next_attempt_at=?,last_error_code=NULL,updated_at=? WHERE id=? AND status='REFUND_FAILED'", at(now),at(now),refundId);
         if(updated!=1) throw ApplicationException.businessRule("REFUND_RETRY_INVALID","Refund is not eligible for retry");
@@ -67,6 +84,24 @@ class JdbcAdminOperations implements AdminOperations {
         if(updated!=1) throw ApplicationException.businessRule("USER_STATUS_UNCHANGED","User status cannot be changed");
         if(locked) jdbc.update("UPDATE refresh_tokens SET revoked_at=?,revocation_reason='REUSE_DETECTED',updated_at=? WHERE user_id=? AND revoked_at IS NULL",at(now),at(now),userId);
         audit.record(actorId,locked?"USER_LOCKED":"USER_UNLOCKED","user",userId,Map.of()); }
+    private String bookingExceptionSql(String exception, List<Object> args) {
+        if (exception == null || exception.isBlank()) return "TRUE";
+        return switch (exception) {
+            case "PAYMENT_REVIEW" -> "b.status='PAYMENT_REVIEW'";
+            case "OVERDUE_PAYMENT" -> {
+                args.add(at(clock.instant()));
+                yield "b.status='PENDING_PAYMENT' AND b.payment_deadline<?";
+            }
+            case "OVERDUE_REFUND" -> {
+                args.add(at(clock.instant().minus(refundSla)));
+                yield "b.status='REFUND_PENDING' AND EXISTS (SELECT 1 FROM refunds r WHERE r.booking_id=b.id AND r.status='REQUESTED' AND r.requested_at<?)";
+            }
+            case "REFUND_FAILED" -> "EXISTS (SELECT 1 FROM refunds r WHERE r.booking_id=b.id AND r.status='REFUND_FAILED')";
+            case "CANCELLED_SHOWTIME" -> "st.status='CANCELLED' AND b.status IN ('PAID','PAYMENT_REVIEW','REFUND_PENDING')";
+            case "PAID_WITHOUT_TICKET" -> "b.status='PAID' AND NOT EXISTS (SELECT 1 FROM tickets t WHERE t.booking_id=b.id)";
+            default -> throw new IllegalArgumentException("Invalid operational exception filter");
+        };
+    }
     private String scopeSql(Set<UUID> scope){return "(? = '{}' OR c.id = ANY(CAST(? AS uuid[])))";} private String scopeArray(Set<UUID> scope){return "{"+scope.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(","))+"}";} private String blank(String s){return s==null||s.isBlank()?null:s.trim();} private String like(String s){return "%"+(s==null?"":s.trim())+"%";}
     private AdminBookingView booking(ResultSet r,int n)throws SQLException{return new AdminBookingView(r.getObject(1,UUID.class),r.getString(2),r.getString(3),r.getString(4),r.getObject(5,UUID.class),r.getString(6),r.getString(7),instant(r,8),r.getLong(9),r.getString(10),instant(r,11));}
     private AdminPaymentView payment(ResultSet r,int n)throws SQLException{return new AdminPaymentView(r.getObject(1,UUID.class),r.getString(2),r.getObject(3,UUID.class),r.getString(4),r.getString(5),r.getString(6),r.getLong(7),r.getString(8),instant(r,9),optional(r,10));}

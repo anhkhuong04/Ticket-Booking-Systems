@@ -42,7 +42,17 @@ export type AdminBookingRow = { id: string; bookingCode: string; customerName: s
 export type AdminPaymentRow = { id: string; bookingCode: string; cinemaId: string; cinemaName: string; provider: string; transactionReference: string; amount: number; status: string; createdAt: string; paidAt: string | null }
 export type AdminRefundRow = { id: string; bookingCode: string; cinemaId: string; cinemaName: string; amount: number; reason: string; status: string; attemptCount: number; requestedAt: string; refundedAt: string | null }
 export type AdminUserRow = { id: string; fullName: string; email: string; phone: string | null; status: 'ACTIVE' | 'LOCKED'; roles: string[]; cinemaNames: string[]; createdAt: string }
-export type ReportSummary = { netRevenue: number; bookings: number; ticketsSold: number; occupancyPercent: number; pendingBookings: number; refundsNeedingAttention: number; daily: { date: string; netRevenue: number; ticketsSold: number }[] }
+export type ReportSummary = {
+  netRevenue: number
+  bookings: number
+  seatsSold: number
+  occupancyPercent: number
+  alerts: { totalBookings: number; paymentReview: number; overduePayments: number; overdueRefunds: number; failedRefunds: number; cancelledShowtimeBookings: number; paidWithoutTicket: number }
+  previousPeriod: { netRevenue: number; bookings: number; seatsSold: number }
+  daily: { date: string; netRevenue: number; bookings: number; seatsSold: number }[]
+  topMovies: { movieId: string; title: string; netRevenue: number; seatsSold: number }[]
+  asOf: string
+}
 export async function getAdminBookings(params: Record<string, string | undefined>) { return (await apiClient.get<AdminBookingRow[]>('/api/admin/bookings', { params })).data }
 export async function getAdminPayments(params: Record<string, string | undefined>) { return (await apiClient.get<AdminPaymentRow[]>('/api/admin/payments', { params })).data }
 export async function getAdminRefunds(params: Record<string, string | undefined>) { return (await apiClient.get<AdminRefundRow[]>('/api/admin/refunds', { params })).data }

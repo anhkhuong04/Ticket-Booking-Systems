@@ -522,14 +522,22 @@ The API never deletes a showtime or changes its snapped prices/seats.
 - CRUD suất chiếu và bảng giá.
 - Quản lý booking, payment, refund và voucher.
 - Quản lý người dùng và nhân viên.
-- Báo cáo doanh thu, vé bán và tỷ lệ lấp đầy.
+- Báo cáo doanh thu ròng, số booking thanh toán thành công, số ghế bán gộp và tỷ lệ lấp đầy.
 
 `GET /api/admin/bookings`, `GET /api/admin/payments`, `GET /api/admin/refunds` và
 `GET /api/admin/reports/summary` là read model, luôn kiểm tra cinema scope tại backend và không
 có API sửa trực tiếp snapshot booking/payment. `POST /api/admin/refunds/{id}/retry` chỉ re-queue
 `REFUND_FAILED` và ghi audit. Quản lý user là `SUPER_ADMIN` only; khóa user thu hồi session đang
-hoạt động và cả khóa/mở khóa đều được audit. Báo cáo dùng `Asia/Ho_Chi_Minh`; doanh thu là net sau
-refund hoàn tất, còn ticket/occupancy chỉ tính vé valid/used và ghế SOLD.
+hoạt động và cả khóa/mở khóa đều được audit. Báo cáo dùng `Asia/Ho_Chi_Minh`; doanh thu theo
+payment `SUCCESS.paid_at` trừ refund `REFUNDED.refunded_at`, booking/ghế bán gộp theo payment thành công,
+và occupancy snapshot là `SOLD / ghế không BLOCKED` của suất `SCHEDULED`. Một ticket có thể chứa nhiều ghế,
+không dùng số ticket entity làm số lượng ghế bán. Operational alerts không lọc theo kỳ, chỉ theo cinema scope;
+refund `REQUESTED` quá SLA mặc định 24 giờ được cảnh báo (cấu hình `app.reporting.refund-sla-hours`).
+`SUPER_ADMIN` có thể xem toàn hệ thống; manager không có chi nhánh được gán phải bị từ chối, không coi scope
+rỗng là quyền xem toàn hệ thống. `GET /api/admin/reports/summary` trả `previousPeriod`, `daily`, `alerts`,
+`topMovies`, `asOf`; mỗi ngày và KPI net revenue phải reconciliation từ cùng sự kiện payment/refund.
+Drill-down cảnh báo dùng `GET /api/admin/bookings?exception=PAYMENT_REVIEW|OVERDUE_PAYMENT|OVERDUE_REFUND|REFUND_FAILED|CANCELLED_SHOWTIME|PAID_WITHOUT_TICKET`
+hoặc `GET /api/admin/refunds?status=REQUESTED&overdue=true`; điều kiện được xác minh tại backend cùng cinema scope.
 
 ### Mã lỗi quan trọng
 

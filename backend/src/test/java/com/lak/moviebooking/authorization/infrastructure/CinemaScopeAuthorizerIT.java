@@ -25,6 +25,20 @@ class CinemaScopeAuthorizerIT extends AbstractIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
+    void deniesUnassignedManagerInsteadOfTreatingEmptyScopeAsGlobal() {
+        UUID managerId = createUser();
+        AuthenticatedPrincipal manager = new AuthenticatedPrincipal(managerId, "manager@example.com", "Manager",
+                Set.of("CINEMA_MANAGER"));
+
+        assertThatThrownBy(() -> cinemaScopeAuthorizer.accessibleCinemaIds(manager))
+                .isInstanceOf(ApplicationException.class)
+                .extracting(exception -> ((ApplicationException) exception).code())
+                .isEqualTo("CINEMA_SCOPE_DENIED");
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM audit_logs WHERE actor_id=? AND action='AUTHORIZATION_DENIED'",
+                Integer.class, managerId)).isEqualTo(1);
+    }
+
+    @Test
     void deniesManagerAccessToAnotherCinemaAndAuditsTheDecision() {
         UUID managerId = createUser();
         UUID assignedCinema = createCinema("Assigned Cinema");

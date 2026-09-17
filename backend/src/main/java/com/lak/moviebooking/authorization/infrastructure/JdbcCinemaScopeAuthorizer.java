@@ -54,7 +54,12 @@ class JdbcCinemaScopeAuthorizer implements CinemaScopeAuthorizer {
         if (actor.roles().contains("SUPER_ADMIN")) {
             return Set.of();
         }
-        return Set.copyOf(jdbcTemplate.queryForList("SELECT cinema_id FROM staff_cinema_assignments WHERE user_id = ?",
-                UUID.class, actor.userId()));
+        Set<UUID> assigned = Set.copyOf(jdbcTemplate.queryForList(
+                "SELECT cinema_id FROM staff_cinema_assignments WHERE user_id = ?", UUID.class, actor.userId()));
+        if (assigned.isEmpty()) {
+            deniedAccessAudit.record(actor.userId(), "/api/admin", "CINEMA_SCOPE");
+            throw ApplicationException.forbidden("CINEMA_SCOPE_DENIED", "You are not assigned to a cinema");
+        }
+        return assigned;
     }
 }

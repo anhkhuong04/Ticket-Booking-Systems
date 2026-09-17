@@ -6,9 +6,11 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface AdminOperations {
-    List<AdminBookingView> bookings(String query, String status, UUID cinemaId, LocalDate date, Set<UUID> cinemaScope);
+    List<AdminBookingView> bookings(String query, String status, String exception, UUID cinemaId,
+                                    LocalDate date, Set<UUID> cinemaScope);
     List<AdminPaymentView> payments(String query, String status, UUID cinemaId, LocalDate date, Set<UUID> cinemaScope);
-    List<AdminRefundView> refunds(String status, UUID cinemaId, LocalDate date, Set<UUID> cinemaScope);
+    List<AdminRefundView> refunds(String status, boolean overdue, UUID cinemaId, LocalDate date,
+                                  Set<UUID> cinemaScope);
     List<AdminUserView> users(String query);
     AdminRefundView refund(UUID refundId, Set<UUID> cinemaScope);
     void retryFailedRefund(UUID actorId, UUID refundId, Set<UUID> cinemaScope);

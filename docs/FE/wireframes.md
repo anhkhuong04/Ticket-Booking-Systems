@@ -1436,19 +1436,21 @@ Trên mobile bộ lọc xếp dọc trong form, không dùng drawer. Badge luôn
 │ Sidebar          │ Dashboard                         Cập nhật lúc 10:30    │
 │                  │ [Hôm nay ▼] [01/09 — 16/09] [Tất cả chi nhánh ▼]       │
 │ Dashboard        │                                                         │
-│ Phim             │ [Doanh thu ròng] [Booking thành công] [Vé] [Lấp đầy] │
+│ Phim             │ [Doanh thu +Δ] [Booking +Δ] [Ghế bán +Δ] [Lấp đầy]   │
 │ Rạp & phòng      │                                                         │
-│ Suất chiếu       │ ┌────────────────────────────────────────────────────┐ │
-│ Bảng giá         │ │ DOANH THU RÒNG & VÉ THEO NGÀY                    │ │
-│ Booking          │ │                         Revenue / Tickets          │ │
-│ Thanh toán       │ └────────────────────────────────────────────────────┘ │
-│ Hoàn tiền        │                                                         │
-│ Voucher          │ [Booking cần xử lý · Hiện tại] [Refund lỗi · Hiện tại]│
+│ Suất chiếu       │ CẢNH BÁO VẬN HÀNH · HIỆN TẠI                         │
+│ Bảng giá         │ [Review] [Quá hạn] [Refund lỗi] [Suất hủy]          │
+│ Booking          │ [Đã trả tiền nhưng thiếu vé]                         │
+│ Thanh toán       │                                                         │
+│ Hoàn tiền        │ ┌────────────────────────────────────────────────────┐ │
+│ Voucher          │ │ DOANH THU RÒNG THEO NGÀY                         │ │
+│                  │ │                         Revenue                    │ │
+│                  │ └────────────────────────────────────────────────────┘ │
 │ Người dùng       │                                                         │
-│ Báo cáo          │ ┌────────────────────────┐ ┌─────────────────────────┐ │
-│                  │ │ Top Movies             │ │ Top Showtimes           │ │
-│                  │ │ Revenue · Tickets      │ │ Revenue · Occupancy     │ │
-│                  │ └────────────────────────┘ └─────────────────────────┘ │
+│ Báo cáo          │ ┌────────────────────────┐                             │
+│                  │ │ Top Movies             │                             │
+│                  │ │ Revenue · Ghế bán      │                             │
+│                  │ └────────────────────────┘                             │
 └──────────────────┴─────────────────────────────────────────────────────────┘
 ```
 
@@ -1456,17 +1458,16 @@ Trên mobile bộ lọc xếp dọc trong form, không dùng drawer. Badge luôn
 
 - Date preset: `Hôm nay`, `7 ngày`, `30 ngày`, `Tháng này`, `Tùy chọn`; ngày theo `Asia/Ho_Chi_Minh`, inclusive, tối đa 366 ngày.
 - `SUPER_ADMIN` thấy `Tất cả chi nhánh`; `CINEMA_MANAGER` chỉ thấy chi nhánh được gán. Một manager có đúng một chi nhánh thì filter bị khóa và vẫn hiển thị tên scope.
-- Filter áp dụng đồng thời cho KPI theo kỳ, chart và top lists. Hai card vận hành có nhãn `Hiện tại` để phân biệt snapshot backlog với metric theo kỳ.
+- Filter ngày áp dụng cho KPI theo kỳ, chart và Top Movies. Operational Alerts chỉ theo cinema scope và có nhãn `Hiện tại`.
 - Đổi filter giữ số liệu cũ ở trạng thái `Đang cập nhật`; response cũ đến muộn không được ghi đè filter mới.
 
 ## Metric presentation
 
 - `Doanh thu ròng`: payment thành công trong kỳ trừ refund đã hoàn tất trong kỳ.
 - `Booking thành công`: số booking duy nhất có payment `SUCCESS` theo `paidAt`; retry/payment trùng không làm tăng số liệu.
-- `Vé bán`: ticket `VALID`/`USED`; không tính `CANCELLED`.
-- `Lấp đầy`: ghế `SOLD` / tổng ghế của các suất bắt đầu trong kỳ; không có ghế hiển thị `0%`.
-- `Booking cần xử lý`: snapshot `PENDING_PAYMENT`, `PAYMENT_REVIEW`, `REFUND_PENDING` trong scope.
-- `Refund lỗi`: snapshot `REFUND_FAILED` cần manual review trong scope.
+- `Ghế đã bán`: số `booking_items` của payment `SUCCESS` theo `paid_at`, là ghế bán gộp chứ không phải ticket entity.
+- `Lấp đầy`: ghế `SOLD` / ghế không `BLOCKED` của suất `SCHEDULED` bắt đầu trong kỳ; mẫu số 0 hiển thị `0%`.
+- `Operational Alerts`: chỉ ngoại lệ; `PENDING_PAYMENT` còn hạn không tính. Tổng đếm booking duy nhất, các nhóm có thể chồng nhau.
 
 KPI card chỉ hiển thị metric có ý nghĩa. Frontend không cộng dữ liệu từ bảng phân trang để tạo KPI hoặc top lists; widget chưa có read model backend phải hiển thị empty state, không mock.
 
@@ -1478,15 +1479,15 @@ KPI card chỉ hiển thị metric có ý nghĩa. Frontend không cộng dữ li
 │ [Thời gian ▼] [Chi nhánh ▼]  │
 ├──────────────────────────────┤
 │ [Doanh thu] [Booking thành công]│
-│ [Vé bán]    [Lấp đầy]        │
+│ [Ghế đã bán] [Lấp đầy]      │
 │                              │
-│ [Booking cần xử lý · Hiện tại]│
-│ [Refund lỗi · Hiện tại]      │
+│ OPERATIONAL ALERTS · HIỆN TẠI│
+│ [Payment review] [Refund lỗi]│
+│ [Quá hạn] [Suất hủy]        │
 │                              │
 │ REVENUE CHART (scroll/fit)   │
 │                              │
 │ Top Movies                   │
-│ Top Showtimes                │
 └──────────────────────────────┘
 ```
 
@@ -1771,7 +1772,7 @@ Lock user:
 │                  │                                                         │
 │                  │ [Date range ▼] [Cinema ▼] [Movie ▼]                    │
 │                  │                                                         │
-│                  │ [Revenue] [Tickets] [Bookings] [Occupancy]             │
+│                  │ [Revenue] [Ghế đã bán] [Bookings] [Occupancy]          │
 │                  │                                                         │
 │                  │ ┌────────────────────────────────────────────────────┐ │
 │                  │ │                    CHART                           │ │

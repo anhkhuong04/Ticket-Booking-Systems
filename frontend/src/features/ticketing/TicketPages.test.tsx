@@ -26,6 +26,8 @@ const historyItem = {
   createdAt: '2029-12-01T10:00:00Z',
   paymentStatus: 'SUCCESS',
   refundStatus: null,
+  showtimeStatus: 'SCHEDULED' as const,
+  canResumePayment: false,
 }
 
 function renderHistory() {

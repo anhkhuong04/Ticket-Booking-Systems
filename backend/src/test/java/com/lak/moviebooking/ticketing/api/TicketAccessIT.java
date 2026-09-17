@@ -82,6 +82,30 @@ class TicketAccessIT extends SeatHoldManagementIT {
         assertThat(history.getFirst().createdAt()).isNotNull();
         assertThat(history.getFirst().paymentStatus()).isNull();
         assertThat(history.getFirst().refundStatus()).isNull();
+        assertThat(history.getFirst().showtimeStatus()).isEqualTo("SCHEDULED");
+        assertThat(history.getFirst().canResumePayment()).isFalse();
+    }
+
+    @Test
+    void exposesCancellationAndOnlyActionablePaymentToTheOwner() {
+        Fixture fixture = fixtureWithPrice();
+        SeatHoldView hold = seatHolds.create(fixture.firstUserId(), new SeatHoldCommand(
+                fixture.showtimeId(), List.of(fixture.standardSeatId()), "dashboard-hold"));
+        BookingView booking = bookings.checkout(fixture.firstUserId(), new BookingCheckoutCommand(hold.id(), "dashboard-checkout"));
+        AuthenticatedPrincipal owner = principal(fixture.firstUserId(), Set.of("CUSTOMER"));
+
+        assertThat(ticketController.myBookings(owner)).singleElement().satisfies(item -> {
+            assertThat(item.showtimeStatus()).isEqualTo("SCHEDULED");
+            assertThat(item.canResumePayment()).isTrue();
+        });
+        assertThat(ticketController.myBookings(principal(createUser("dashboard-stranger"), Set.of("CUSTOMER")))).isEmpty();
+
+        jdbcTemplate.update("UPDATE showtimes SET status='CANCELLED' WHERE id=?", fixture.showtimeId());
+        assertThat(ticketController.myBookings(owner)).singleElement().satisfies(item -> {
+            assertThat(item.bookingId()).isEqualTo(booking.id());
+            assertThat(item.showtimeStatus()).isEqualTo("CANCELLED");
+            assertThat(item.canResumePayment()).isFalse();
+        });
     }
 
     @Test

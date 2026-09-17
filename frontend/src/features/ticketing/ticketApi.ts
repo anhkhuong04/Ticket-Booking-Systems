@@ -15,6 +15,8 @@ export type BookingHistoryItem = {
   createdAt: string
   paymentStatus: string | null
   refundStatus: 'REQUESTED' | 'REFUNDED' | 'REFUND_FAILED' | null
+  showtimeStatus: 'SCHEDULED' | 'CANCELLED'
+  canResumePayment: boolean
 }
 
 export type Ticket = {

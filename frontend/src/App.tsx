@@ -7,6 +7,7 @@ import { AdminPricingPage, AdminShowtimesPage } from './features/admin/AdminShow
 import { AdminShell } from './features/admin/AdminShell'
 import { AdminBookingsPage, AdminDashboardPage, AdminPaymentsPage, AdminRefundsPage, AdminUsersPage } from './features/admin/AdminOperationsPages'
 import { CinemasPage, HomePage, MovieDetailPage, MoviesPage } from './features/catalog/CatalogPages'
+import { BookingHistoryPage } from './features/account/BookingHistoryPage'
 import { CustomerShell } from './features/catalog/CustomerShell'
 import { ShowtimeSelectionPage } from './features/showtime/ShowtimeSelectionPage'
 import { SeatSelectionPage } from './features/reservation/SeatSelectionPage'
@@ -37,6 +38,7 @@ function App() {
       <Route path="/movies/:movieId/showtimes" element={<ShowtimeSelectionPage />} />
       <Route path="/cinemas" element={<CinemasPage />} />
       <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me" element={<UserDashboardPage />} /></Route>
+      <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/bookings" element={<BookingHistoryPage />} /></Route>
       <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/profile" element={<CustomerProfilePage />} /></Route>
       <Route element={<ProtectedRoute roles={['CUSTOMER']} />}><Route path="/me/billing" element={<BillingPreferencesPage />} /></Route>
     </Route>

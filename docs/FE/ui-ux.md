@@ -1065,25 +1065,25 @@ Tạo một điểm bắt đầu duy nhất sau đăng nhập để khách hàng
 
 ## Information hierarchy
 
-1. **Việc cần xử lý:** booking chờ thanh toán/xác minh, refund đang xử lý hoặc cần hỗ trợ.
-2. **Vé sắp xem gần nhất:** suất chiếu tương lai gần nhất có ticket `VALID`.
-3. **Thao tác nhanh:** Vé của tôi, Thông tin cá nhân, Thông tin hóa đơn, Đặt vé mới, Tìm rạp LAK. Lịch sử đặt vé được bổ sung khi màn hình đích hoàn tất.
-4. **Đặt vé gần đây:** tối đa 5 booking mới nhất, có trạng thái bằng text và badge.
-5. **Phim đang chiếu:** dữ liệu catalog thật và CTA dẫn về chi tiết phim.
+1. **Có vấn đề:** suất chiếu bị hủy hoặc hoàn tiền cần hỗ trợ; suất bị hủy phải nổi bật vì vé không còn hiệu lực.
+2. **Cần bạn xử lý:** chỉ booking còn hạn và backend xác nhận có thể tiếp tục thanh toán; CTA rõ ràng.
+3. **Đang được xử lý:** đối soát thanh toán hoặc hoàn tiền; chỉ theo dõi, không thúc khách thanh toán/gửi yêu cầu mới.
+4. **Vé sắp xem gần nhất:** suất chiếu tương lai chưa bị hủy, có ticket `VALID` và booking `PAID`.
+5. **Thao tác nhanh:** Vé của tôi, Lịch sử đặt vé, Đặt vé mới, Hồ sơ. Thông tin hóa đơn nằm trong Hồ sơ; Tìm rạp đã có navigation công khai.
+6. **Đặt vé gần đây:** tối đa 5 booking mới nhất, trạng thái bằng ngôn ngữ khách hàng, không hiện enum backend.
 
 ## State and data rules
 
 - `GET /api/me/bookings` là nguồn dữ liệu cho booking/ticket summary và chỉ trả dữ liệu của tài khoản đang xác thực.
 - Không tải hoặc lưu QR ở Dashboard. QR chỉ được lấy khi khách mở chi tiết vé.
 - Sắp xếp, trạng thái booking, payment, refund và ticket phải dựa trên dữ liệu backend; client không tự suy diễn một giao dịch đã thành công.
-- Nếu read model hiện tại chưa trả payment/refund summary cần thiết, ẩn block tương ứng hoặc hiển thị CTA đến Booking Detail; không ghép trạng thái từ nhiều request không có contract.
+- `showtimeStatus` quyết định cảnh báo hủy suất và loại vé khỏi Vé sắp xem; `canResumePayment` do backend tính từ deadline, showtime và payment mới nhất, không suy đoán ở client.
 - `REFUND_FAILED` dùng copy an toàn như `Cần hỗ trợ xử lý hoàn tiền`, không yêu cầu khách tạo refund mới.
-- Phim đang chiếu dùng catalog public; lỗi catalog không được làm mất các block tài khoản đã tải thành công.
+- Dashboard không tải block Phim đang chiếu; Home xử lý discovery và `Đặt vé mới` dẫn vào danh sách phim.
 
 ## Loading, empty and error
 
-- Dùng skeleton theo từng block; block nào tải xong hiển thị độc lập.
-- Không có việc cần xử lý: ẩn cảnh báo và hiển thị thông điệp ngắn `Bạn không có giao dịch cần xử lý`.
+- Dùng skeleton cho dữ liệu tài khoản; các nhóm trạng thái không có item được ẩn, không gắn nhãn `Cần bạn xử lý` cho việc đang chạy trong hệ thống.
 - Không có vé sắp xem: hiển thị CTA `Khám phá phim`.
 - Lỗi dữ liệu tài khoản: hiển thị lỗi inline và `Thử lại`; không hiển thị dữ liệu cũ như dữ liệu vừa cập nhật nếu không có nhãn.
 
@@ -1095,7 +1095,7 @@ Tạo một điểm bắt đầu duy nhất sau đăng nhập để khách hàng
 
 ## API readiness
 
-`GET /api/me/bookings` hiện đủ cho vé sắp xem và danh sách booking cơ bản. Block payment/refund cần xử lý chỉ được triển khai đầy đủ khi read model bổ sung payment/refund summary an toàn cho owner; không gọi API admin hoặc suy trạng thái từ redirect phía client.
+`GET /api/me/bookings` cung cấp `createdAt`, trạng thái booking/payment/refund/ticket/showtime và `canResumePayment` cho owner. Dashboard tải lại khi cửa sổ lấy focus; CTA checkout vẫn để backend kiểm tra lại tại thời điểm thao tác. Không gọi API admin hoặc suy trạng thái từ redirect.
 
 ---
 
@@ -1107,21 +1107,21 @@ Cho phép khách hàng tra cứu toàn bộ booking của chính mình, kể c�
 
 ## Filters and list content
 
-- tab trạng thái: `Tất cả`, `Cần xử lý`, `Hoàn tất`, `Đã hủy / hết hạn`;
+- bộ lọc trạng thái: `Tất cả`, `Có vấn đề`, `Cần bạn xử lý`, `Đang được xử lý`, `Hoàn tất / đã đóng`;
 - khoảng thời gian theo ngày tạo booking, hiển thị theo `Asia/Ho_Chi_Minh`;
-- tìm theo booking code; tìm kiếm phải được trim và debounce;
+- tìm theo booking code, trim và áp dụng khi submit bộ lọc;
 - mỗi item gồm booking code, phim, rạp/phòng, suất chiếu, ghế, thời điểm đặt và booking status;
 - payment/refund/ticket status chỉ hiển thị khi API trả về authoritative summary;
-- CTA chính là `Xem chi tiết`, dẫn đến `/me/bookings/:code` (implementation có thể dùng opaque booking id nếu API contract chọn id làm path key).
+- CTA dẫn đến vé nếu đã phát hành, hoặc checkout nếu backend cho phép tiếp tục thanh toán; các booking khác chỉ hiển thị trạng thái và chi tiết tóm tắt trong card. Không hứa một route chi tiết booking chưa tồn tại.
 
 ## Data, pagination and security
 
 - Dùng `GET /api/me/bookings`; API chỉ trả booking thuộc tài khoản hiện tại và không chứa QR payload.
-- Filter/sort/pagination nên do server xử lý khi dữ liệu vượt một trang; không tải toàn bộ lịch sử rồi giả lập pagination ở client.
+- Phiên bản hiện tại lọc/sắp xếp trên danh sách owner từ API, không hiển thị pagination giả. Khi dữ liệu tăng, bổ sung server-side filter/pagination và metadata trước khi hiển thị trang.
 - URL giữ filter có thể chia sẻ trong cùng phiên, nhưng không đưa email, payment reference hoặc dữ liệu nhạy cảm vào query string.
 - Refresh/retry chỉ đọc lại danh sách, không tạo lại booking hoặc payment.
 
-Read model hiện tại chưa có `createdAt`, payment/refund summary và pagination metadata. Bản triển khai tối thiểu có thể hiển thị danh sách theo dữ liệu hiện có; để đáp ứng đầy đủ filter, phân trang và trạng thái trong spec, backend cần mở rộng `GET /api/me/bookings` theo hướng backward-compatible hoặc cung cấp endpoint history riêng owner-only.
+Read model đã có `createdAt`, payment/refund summary, `showtimeStatus` và `canResumePayment`; chưa có pagination metadata. Bộ lọc ngày dùng ngày tạo booking theo `Asia/Ho_Chi_Minh`.
 
 ## States
 

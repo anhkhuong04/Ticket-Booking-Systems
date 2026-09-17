@@ -1,7 +1,9 @@
 package com.lak.moviebooking.ticketing.infrastructure;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,9 +18,11 @@ import org.springframework.stereotype.Service;
 class JdbcTicketQuery implements TicketQuery {
 
     private final JdbcTemplate jdbcTemplate;
+    private final Clock clock;
 
-    JdbcTicketQuery(JdbcTemplate jdbcTemplate) {
+    JdbcTicketQuery(JdbcTemplate jdbcTemplate, Clock clock) {
         this.jdbcTemplate = jdbcTemplate;
+        this.clock = clock;
     }
 
     @Override
@@ -32,7 +36,8 @@ class JdbcTicketQuery implements TicketQuery {
                        (SELECT payment.status FROM payments payment WHERE payment.booking_id=booking.id ORDER BY payment.created_at DESC LIMIT 1) AS payment_status,
                        (SELECT refund.status FROM refunds refund WHERE refund.booking_id=booking.id ORDER BY refund.created_at DESC LIMIT 1) AS refund_status,
                        movie.title AS movie_title,movie.poster_url,cinema.id AS cinema_id,cinema.name AS cinema_name,
-                       auditorium.name AS auditorium_name,showtime.start_at
+                       auditorium.name AS auditorium_name,showtime.start_at,showtime.status AS showtime_status,
+                       FALSE AS can_resume_payment
                 FROM tickets ticket
                 JOIN bookings booking ON booking.id=ticket.booking_id
                 JOIN showtimes showtime ON showtime.id=booking.showtime_id
@@ -53,7 +58,9 @@ class JdbcTicketQuery implements TicketQuery {
                        (SELECT payment.status FROM payments payment WHERE payment.booking_id=booking.id ORDER BY payment.created_at DESC LIMIT 1) AS payment_status,
                        (SELECT refund.status FROM refunds refund WHERE refund.booking_id=booking.id ORDER BY refund.created_at DESC LIMIT 1) AS refund_status,
                        movie.title AS movie_title,movie.poster_url,cinema.id AS cinema_id,cinema.name AS cinema_name,
-                       auditorium.name AS auditorium_name,showtime.start_at
+                       auditorium.name AS auditorium_name,showtime.start_at,showtime.status AS showtime_status,
+                       (booking.status='PENDING_PAYMENT' AND booking.payment_deadline>? AND showtime.status='SCHEDULED'
+                        AND COALESCE((SELECT payment.status FROM payments payment WHERE payment.booking_id=booking.id ORDER BY payment.created_at DESC LIMIT 1), 'NONE') IN ('NONE','FAILED','EXPIRED')) AS can_resume_payment
                 FROM bookings booking
                 JOIN showtimes showtime ON showtime.id=booking.showtime_id
                 JOIN movies movie ON movie.id=showtime.movie_id
@@ -62,10 +69,11 @@ class JdbcTicketQuery implements TicketQuery {
                 LEFT JOIN tickets ticket ON ticket.booking_id=booking.id
                 WHERE booking.user_id=?
                 ORDER BY showtime.start_at DESC,booking.created_at DESC
-                """, this::mapRow, userId);
+                """, this::mapRow, clock.instant().atOffset(ZoneOffset.UTC), userId);
         return rows.stream().map(row -> new TicketBookingSummary(row.bookingId(), row.bookingCode(), row.bookingStatus(),
                 row.movieTitle(), row.posterUrl(), row.cinemaName(), row.auditoriumName(), row.startAt(), seats(row.bookingId()),
-                row.ticketCode(), row.ticketStatus(), row.createdAt(), row.paymentStatus(), row.refundStatus())).toList();
+                row.ticketCode(), row.ticketStatus(), row.createdAt(), row.paymentStatus(), row.refundStatus(),
+                row.showtimeStatus(), row.canResumePayment())).toList();
     }
 
     private TicketLookup.TicketDetailView detail(TicketRow row) {
@@ -90,11 +98,13 @@ class JdbcTicketQuery implements TicketQuery {
                 resultSet.getObject("user_id", UUID.class), resultSet.getObject("created_at", OffsetDateTime.class).toInstant(),
                 resultSet.getString("payment_status"), resultSet.getString("refund_status"), resultSet.getString("movie_title"), resultSet.getString("poster_url"),
                 resultSet.getObject("cinema_id", UUID.class), resultSet.getString("cinema_name"), resultSet.getString("auditorium_name"),
-                resultSet.getObject("start_at", OffsetDateTime.class).toInstant());
+                resultSet.getObject("start_at", OffsetDateTime.class).toInstant(),
+                resultSet.getString("showtime_status"), resultSet.getBoolean("can_resume_payment"));
     }
 
     private record TicketRow(UUID ticketId, String ticketCode, String ticketStatus, Instant issuedAt, Instant usedAt,
                              UUID bookingId, String bookingCode, String bookingStatus, UUID ownerId, Instant createdAt,
                              String paymentStatus, String refundStatus, String movieTitle,
-                             String posterUrl, UUID cinemaId, String cinemaName, String auditoriumName, Instant startAt) { }
+                             String posterUrl, UUID cinemaId, String cinemaName, String auditoriumName, Instant startAt,
+                             String showtimeStatus, boolean canResumePayment) { }
 }

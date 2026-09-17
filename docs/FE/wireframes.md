@@ -1208,28 +1208,25 @@ Hồ sơ có họ tên, email chỉ đọc, số điện thoại và ngày sinh 
 │ Tổng quan các vé và giao dịch của bạn                                     │
 │                                                                            │
 │ ┌────────────────────────────────────────────────────────────────────────┐ │
-│ │ CẦN XỬ LÝ                                                             │ │
-│ │ Booking LAK-AB12 · Đang xác minh thanh toán             [Xem chi tiết]│ │
-│ │ Refund LAK-CD34 · Đang xử lý hoàn tiền                  [Theo dõi]    │ │
+│ │ CÓ VẤN ĐỀ: Suất chiếu LAK-CD34 đã hủy                   [Xem booking] │ │
+│ │ CẦN BẠN XỬ LÝ: LAK-AB12 còn hạn thanh toán             [Tiếp tục]    │ │
+│ │ ĐANG ĐƯỢC XỬ LÝ: LAK-EF56 đang hoàn tiền               [Theo dõi]    │ │
 │ └────────────────────────────────────────────────────────────────────────┘ │
 │                                                                            │
 │ ┌───────────────────────────────────────────┬────────────────────────────┐ │
 │ │ VÉ SẮP XEM                               │ THAO TÁC NHANH             │ │
 │ │ [Poster] Movie Title                     │ [Vé của tôi]               │ │
-│ │ 20:30 · 18/09 · LAK Cinema A             │ [Đặt vé mới]               │ │
-│ │ Ghế A5, A6                    [Xem vé]   │ [Tìm rạp LAK]              │ │
+│ │ 20:30 · 18/09 · LAK Cinema A             │ [Lịch sử đặt vé]           │ │
+│ │ Ghế A5, A6                    [Xem vé]   │ [Đặt vé mới] [Hồ sơ]        │ │
 │ └───────────────────────────────────────────┴────────────────────────────┘ │
 │                                                                            │
 │ ĐẶT VÉ GẦN ĐÂY                                      [Xem tất cả]          │
-│ [LAK-AB12 · Movie · 18/09 · PAID] [Xem chi tiết]                          │
-│ [LAK-CD34 · Movie · 11/09 · REFUND_PENDING] [Xem chi tiết]                │
-│                                                                            │
-│ PHIM ĐANG CHIẾU                                      [Khám phá phim]       │
-│ [Movie card] [Movie card] [Movie card] [Movie card]                       │
+│ [LAK-AB12 · Movie · 18/09 · Đã thanh toán] [Xem booking]                  │
+│ [LAK-CD34 · Movie · 11/09 · Suất chiếu đã hủy] [Xem booking]              │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Nếu không có việc cần xử lý, block đầu tiên thu gọn thành một dòng xác nhận trung tính. Vé sắp xem chỉ hiển thị ticket `VALID` có `startAt` gần nhất trong tương lai.
+Nhóm trạng thái rỗng được ẩn. `Có vấn đề` đứng đầu, đặc biệt khi suất chiếu bị hủy. Vé sắp xem chỉ hiển thị ticket `VALID` của booking `PAID`, showtime `SCHEDULED` và `startAt` gần nhất trong tương lai.
 
 ## Mobile
 
@@ -1239,8 +1236,12 @@ Nếu không có việc cần xử lý, block đầu tiên thu gọn thành mộ
 ├──────────────────────────────┤
 │ Xin chào, Nguyễn Văn A       │
 │                              │
-│ CẦN XỬ LÝ                    │
-│ [Status card] [Xem chi tiết] │
+│ CÓ VẤN ĐỀ                    │
+│ [Suất chiếu đã hủy] [Theo dõi]│
+│ CẦN BẠN XỬ LÝ               │
+│ [Chờ thanh toán] [Tiếp tục] │
+│ ĐANG ĐƯỢC XỬ LÝ             │
+│ [Đang hoàn tiền] [Theo dõi] │
 │                              │
 │ VÉ SẮP XEM                   │
 │ [Poster] Movie Title         │
@@ -1248,22 +1249,20 @@ Nếu không có việc cần xử lý, block đầu tiên thu gọn thành mộ
 │          [Xem vé]            │
 │                              │
 │ THAO TÁC NHANH               │
-│ [Vé] [Lịch sử] [Hồ sơ]       │
+│ [Vé] [Lịch sử]              │
+│ [Đặt vé mới] [Hồ sơ]        │
 │                              │
 │ ĐẶT VÉ GẦN ĐÂY               │
 │ [Booking card]               │
 │                              │
-│ PHIM ĐANG CHIẾU              │
-│ [Horizontal movie cards →]   │
 └──────────────────────────────┘
 ```
 
-Mobile giữ thứ tự: cần xử lý → vé sắp xem → thao tác nhanh → lịch sử gần đây → phim. Không đưa carousel tự chạy vào Dashboard.
+Mobile giữ thứ tự: có vấn đề → cần bạn xử lý → đang được xử lý → vé sắp xem → bốn thao tác nhanh → booking gần đây. Discovery nằm ở Home, không tải carousel phim trong Dashboard.
 
 ## Loading / empty / error
 
-- Skeleton độc lập cho account summary và catalog.
-- Lỗi catalog không che dữ liệu booking; lỗi booking không che navigation account.
+- Skeleton cho dữ liệu tài khoản; lỗi booking không che navigation account.
 - Không có vé sắp xem hiển thị `[Khám phá phim]`.
 - Không có booking hiển thị `[Bạn chưa có booking nào]` và không render danh sách rỗng giả.
 
@@ -1277,19 +1276,19 @@ Mobile giữ thứ tự: cần xử lý → vé sắp xem → thao tác nhanh �
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ LỊCH SỬ ĐẶT VÉ                                                             │
 │                                                                            │
-│ [Tất cả] [Cần xử lý] [Hoàn tất] [Đã hủy / hết hạn]                        │
+│ [Tất cả] [Có vấn đề] [Cần bạn xử lý] [Đang được xử lý] [Hoàn tất / đã đóng]│
 │ [Từ ngày] [Đến ngày] [Booking code________________] [Xóa bộ lọc]           │
 │                                                                            │
 │ ┌────────────────────────────────────────────────────────────────────────┐ │
-│ │ LAK-AB12   Movie Title                              [PAID]             │ │
+│ │ LAK-AB12   Movie Title                              [Đã thanh toán]    │ │
 │ │ 20:30 · 18/09/2026 · LAK Cinema A · Room 2                            │ │
-│ │ Ghế A5, A6 · Đặt lúc 10:15 10/09/2026              [Xem chi tiết]    │ │
+│ │ Ghế A5, A6 · Đặt lúc 10:15 10/09/2026              [Xem vé]           │ │
 │ └────────────────────────────────────────────────────────────────────────┘ │
 │ ┌────────────────────────────────────────────────────────────────────────┐ │
-│ │ LAK-CD34   Movie Title                    [REFUND_PENDING]             │ │
-│ │ ...                                                  [Xem chi tiết]    │ │
+│ │ LAK-CD34   Movie Title                    [Đang hoàn tiền]             │ │
+│ │ ...                                                  [Xem vé]           │ │
 │ └────────────────────────────────────────────────────────────────────────┘ │
-│                                                    [←] Trang 1 / N [→]    │
+│ Danh sách owner hiện tại; chưa hiển thị phân trang giả                    │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1302,22 +1301,22 @@ Mobile giữ thứ tự: cần xử lý → vé sắp xem → thao tác nhanh �
 │ [Trạng thái ▼] [Bộ lọc]      │
 │ [Booking code____________]   │
 ├──────────────────────────────┤
-│ LAK-AB12            [PAID]   │
+│ LAK-AB12  [Đã thanh toán]    │
 │ Movie Title                  │
 │ 20:30 · 18/09                │
 │ Cinema A · A5, A6            │
-│ [Xem chi tiết]               │
+│ [Xem vé]                     │
 ├──────────────────────────────┤
 │ ...                          │
 └──────────────────────────────┘
 ```
 
-Date range trên mobile đặt trong filter drawer. Badge luôn đi kèm text; không ẩn trạng thái để tiết kiệm chiều ngang.
+Trên mobile bộ lọc xếp dọc trong form, không dùng drawer. Badge luôn đi kèm text; không ẩn trạng thái để tiết kiệm chiều ngang.
 
 ## State contract
 
 - Danh sách dùng endpoint owner-only và không chứa QR payload.
-- `Xem chi tiết` là action chính duy nhất trên mỗi item; refund tiếp tục ở Booking Detail.
+- Card chỉ có CTA `Xem vé` khi đã phát hành ticket hoặc `Tiếp tục thanh toán` khi backend cho phép. Các trạng thái còn lại chỉ hiển thị thông tin tóm tắt; chưa có route Booking Detail riêng.
 - Empty toàn bộ: `Bạn chưa có booking nào` + `[Khám phá phim]`.
 - Empty theo filter: `Không có booking khớp bộ lọc` + `[Xóa bộ lọc]`.
 - Lỗi giữ nguyên filter và hiển thị `[Thử lại]`; retry không tạo booking/payment mới.

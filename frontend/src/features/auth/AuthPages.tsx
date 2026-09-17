@@ -8,9 +8,9 @@ import logo from '../../assets/logo-banners/logo.png'
 function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
   const loginLayout = title === 'Đăng nhập'
   if (loginLayout) {
-    return <main className="relative min-h-screen overflow-hidden bg-slate-950 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/posters/bg-login.png')" }}>
+    return <main className="relative flex min-h-screen items-center justify-end overflow-hidden bg-slate-950 bg-cover bg-center bg-no-repeat p-4 sm:p-8 lg:p-12" style={{ backgroundImage: "url('/posters/bg-login.png')" }}>
       <div className="absolute inset-0 bg-slate-950/25" aria-hidden="true" />
-      <section className="relative flex min-h-screen w-full max-w-xl items-center bg-white/95 px-6 py-8 shadow-2xl backdrop-blur-sm sm:px-12 lg:w-[min(100%,520px)] lg:rounded-r-[2rem]">
+      <section className="relative w-full max-w-[472px] rounded-2xl border border-white/60 bg-white/95 px-6 py-8 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-10 lg:mr-[5vw]">
         <div className="mx-auto w-full max-w-md">
           <Link to="/" className="inline-flex rounded-lg focus-visible:outline-2 focus-visible:outline-info" aria-label="LAK Cinema - Trang chủ"><img src={logo} alt="LAK Cinema" className="h-16 w-48 object-contain object-left" /></Link>
           <h1 className="mt-8 text-3xl font-bold tracking-tight text-text-primary">{title}</h1>

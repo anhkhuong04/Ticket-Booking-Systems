@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   envDir: '..',
-  publicDir: false,
+  publicDir: 'public',
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,

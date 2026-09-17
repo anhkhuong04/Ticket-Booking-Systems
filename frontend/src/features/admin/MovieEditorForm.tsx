@@ -56,9 +56,8 @@ export function MovieEditorForm({ movie, genres, onSaved, onCancel, onError }: P
     }
   }
 
-  return <form key={movie?.id ?? 'new'} onSubmit={submit} className="rounded-xl border border-border bg-surface p-5">
-    <h2 className="font-semibold">{movie ? `Chỉnh sửa ${movie.title}` : 'Thêm phim'}</h2>
-    <div className="mt-4 space-y-3">
+  return <form key={movie?.id ?? 'new'} onSubmit={submit}>
+    <div className="space-y-3">
       <label className="block text-sm">Tên phim<input required name="title" maxLength={255} defaultValue={movie?.title} className="control mt-1" /></label>
       <label className="block text-sm">Mô tả<textarea name="description" defaultValue={movie?.description ?? ''} className="control mt-1 min-h-24" /></label>
       <div className="grid grid-cols-2 gap-3">

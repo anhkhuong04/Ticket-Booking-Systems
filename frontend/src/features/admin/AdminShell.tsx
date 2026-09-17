@@ -148,9 +148,9 @@ function AccountMenu({ onLogout }: { onLogout: () => void }) {
 
 function Sidebar({ mobile = false, onClose }: { mobile?: boolean; onClose?: () => void }) {
   return (
-    <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-surface lg:flex'}>
+    <aside className={mobile ? 'flex h-full w-[min(86vw,300px)] flex-col bg-surface shadow-2xl' : 'sticky top-0 hidden h-screen w-60 shrink-0 self-start flex-col border-r border-border bg-surface lg:flex'}>
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5">
-        <Link to="/admin" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="LAK Admin - Dashboard">
+        <Link to="/" onClick={onClose} className="flex items-center gap-2.5 rounded-lg text-text-primary focus-visible:outline-2 focus-visible:outline-primary" aria-label="LAK Cinema - Trang chủ">
           <img src={logo} alt="LAK" className="h-10 w-24 object-contain object-left" />
           <span className="text-sm font-bold tracking-[0.18em] text-text-primary">ADMIN</span>
         </Link>

@@ -5,7 +5,11 @@ import { forgotPassword, resetPassword } from './authApi'
 import { useAuth } from './AuthProvider'
 
 function AuthCard({ title, children }: { title: string; children: React.ReactNode }) { return <main className="grid min-h-screen place-items-center bg-background p-4"><section className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"><Link to="/" className="text-lg font-bold text-primary">LAK</Link><h1 className="mt-6 text-2xl font-bold text-text-primary">{title}</h1>{children}</section></main> }
-function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) { const id = props.name; return <label className="block text-sm font-medium text-text-primary" htmlFor={id}>{label}<input id={id} {...props} className="mt-1 min-h-11 w-full rounded-lg border border-border px-3 text-text-primary outline-none focus:border-info focus:ring-2 focus:ring-info/20" /></label> }
+function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  const id = props.name
+  const autoComplete = props.name === 'email' && props.autoComplete === 'email' ? 'username' : props.autoComplete
+  return <label className="block text-sm font-medium text-text-primary" htmlFor={id}>{label}<input id={id} {...props} autoComplete={autoComplete} className="mt-1 min-h-11 w-full rounded-lg border border-border px-3 text-text-primary outline-none focus:border-info focus:ring-2 focus:ring-info/20" /></label>
+}
 function ErrorMessage({ value }: { value: string | null }) { return value ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-error">{value}</p> : null }
 function Submit({ children, pending }: { children: string; pending: boolean }) { return <button type="submit" disabled={pending} className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60">{pending ? 'Đang xử lý…' : children}</button> }
 

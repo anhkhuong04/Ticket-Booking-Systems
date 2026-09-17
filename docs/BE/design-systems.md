@@ -514,7 +514,7 @@ The API never deletes a showtime or changes its snapped prices/seats.
 
 - CRUD phim, thể loại và media.
 - CRUD chi nhánh, phòng và ghế.
-- Catalog write APIs nằm dưới `/api/admin/movies`, `/api/admin/genres`; chỉ `SUPER_ADMIN` được phép thay đổi catalog hoặc xin chữ ký `POST /api/admin/media/signatures` cho Cloudinary. Backend chỉ ký JPEG/PNG/WebP không quá 5 MiB (cấu hình được), không trả API secret.
+- Catalog write APIs nằm dưới `/api/admin/movies`, `/api/admin/genres`; chỉ `SUPER_ADMIN` được phép thay đổi catalog hoặc xin chữ ký `POST /api/admin/media/signatures` cho Cloudinary. Media được chọn từ thiết bị, không nhận URL nhập tay: backend chỉ ký JPEG/PNG/WebP cho poster và MP4/WebM cho trailer, mỗi tệp không quá 3 MiB; giới hạn này được kiểm tra lại ở client, backend và Cloudinary preset. API không trả API secret.
 - `GET /api/movies/{id}` và phản hồi ghi phim của admin có thêm `country: string|null`, `director: string|null`, `castMembers: string[]`. `POST/PUT /api/admin/movies` nhận ba trường tùy chọn này; diễn viên tối đa 30 người, mỗi tên tối đa 150 ký tự, thứ tự theo mảng. Phim cũ trả `null`, `null`, `[]` nếu chưa nhập.
 - `DELETE /api/admin/movies/{id}` là lưu trữ/ẩn phim, không xóa bản ghi và bị từ chối khi còn suất `SCHEDULED` đang mở bán. Cần hủy suất theo workflow trước. Tạo suất và lưu trữ cùng khóa bản ghi phim để không xảy ra race; không được chuyển thẳng sang `ARCHIVED` qua `POST/PUT`.
 - Cinema write APIs nằm dưới `/api/admin/cinemas` và `/api/admin/auditoriums`; manager chỉ thao tác chi nhánh được gán. Layout ghế bị từ chối khi phòng đã có suất chiếu để không phá snapshot giao dịch.
@@ -637,7 +637,7 @@ Event chỉ chứa ID và trạng thái cần thiết, không chứa thông tin 
 - QR sử dụng token ngẫu nhiên đủ mạnh; chỉ lưu hash.
 - Giới hạn login, giữ ghế, voucher, webhook và quét QR.
 - Không ghi token, password hoặc payload nhạy cảm vào log.
-- Upload Cloudinary phải được backend ký và kiểm tra loại file/kích thước; preset Cloudinary production cũng phải hạn chế cùng loại file và kích thước.
+- Upload Cloudinary phải được backend ký và kiểm tra loại file/kích thước; preset Cloudinary production cũng phải hạn chế JPEG/PNG/WebP/MP4/WebM và tối đa 3 MiB mỗi tệp.
 - Secret lưu trong environment variables.
 - Audit các thao tác đổi giá, hủy suất và hoàn tiền.
 

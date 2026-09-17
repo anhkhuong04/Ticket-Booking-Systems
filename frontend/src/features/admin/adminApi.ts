@@ -16,9 +16,34 @@ export async function createMovie(payload: MoviePayload) { return (await apiClie
 export async function updateMovie(id: string, payload: MoviePayload) { return (await apiClient.put<MovieDetail>(`/api/admin/movies/${id}`, payload)).data }
 export async function archiveMovie(id: string) { await apiClient.delete(`/api/admin/movies/${id}`) }
 export async function createGenre(payload: { name: string; slug: string }) { return (await apiClient.post<Genre>('/api/admin/genres', payload)).data }
-export async function signMedia(file: File) { return (await apiClient.post<{ cloudName: string; apiKey: string; folder: string; timestamp: number; signature: string }>('/api/admin/media/signatures', { filename: file.name, contentType: file.type, sizeBytes: file.size })).data }
-export async function uploadPoster(file: File) { const signed = await signMedia(file); const data = new FormData(); data.set('file', file); data.set('api_key', signed.apiKey); data.set('timestamp', String(signed.timestamp)); data.set('signature', signed.signature); data.set('folder', signed.folder); const response = await fetch(`https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`, { method: 'POST', body: data }); if (!response.ok) throw new Error('Không thể tải ảnh lên.'); const body: unknown = await response.json(); if (!body || typeof body !== 'object' || !('secure_url' in body) || typeof body.secure_url !== 'string') throw new Error('Phản hồi tải ảnh không hợp lệ.'); return body.secure_url }
+export const MAX_MOVIE_MEDIA_BYTES = 3 * 1024 * 1024
+const movieMediaTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
 
+export async function signMedia(file: File) {
+  return (await apiClient.post<{ cloudName: string; apiKey: string; folder: string; resourceType: 'image' | 'video'; timestamp: number; signature: string }>(
+    '/api/admin/media/signatures', { filename: file.name, contentType: file.type, sizeBytes: file.size },
+  )).data
+}
+
+export async function uploadMovieMedia(file: File) {
+  if (!movieMediaTypes.has(file.type) || file.size <= 0 || file.size > MAX_MOVIE_MEDIA_BYTES) {
+    throw new Error('Chỉ nhận ảnh JPEG, PNG, WebP hoặc video MP4, WebM không quá 3 MB.')
+  }
+  const signed = await signMedia(file)
+  const data = new FormData()
+  data.set('file', file)
+  data.set('api_key', signed.apiKey)
+  data.set('timestamp', String(signed.timestamp))
+  data.set('signature', signed.signature)
+  data.set('folder', signed.folder)
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${signed.cloudName}/${signed.resourceType}/upload`, { method: 'POST', body: data })
+  if (!response.ok) throw new Error('Không thể tải tệp lên.')
+  const body: unknown = await response.json()
+  if (!body || typeof body !== 'object' || !('secure_url' in body) || typeof body.secure_url !== 'string') {
+    throw new Error('Phản hồi tải tệp không hợp lệ.')
+  }
+  return body.secure_url
+}
 export async function getAdminCinemas() { return (await apiClient.get<CinemaAdmin[]>('/api/admin/cinemas')).data }
 export async function createCinema(payload: Omit<CinemaAdmin, 'id' | 'auditoriumCount'>) { return (await apiClient.post('/api/admin/cinemas', payload)).data }
 export async function deactivateCinema(id: string) { await apiClient.delete(`/api/admin/cinemas/${id}`) }

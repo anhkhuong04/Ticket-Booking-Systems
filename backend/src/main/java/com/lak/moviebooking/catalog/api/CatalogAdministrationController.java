@@ -110,6 +110,6 @@ public class CatalogAdministrationController {
         GenreWriteCommand toCommand() { return new GenreWriteCommand(name, slug); }
     }
 
-    public record MediaSignatureRequest(@NotBlank String filename, @NotBlank String contentType, @Min(1) @Max(5_242_880) long sizeBytes) {
+    public record MediaSignatureRequest(@NotBlank String filename, @NotBlank String contentType, @Min(1) @Max(3_145_728) long sizeBytes) {
     }
 }

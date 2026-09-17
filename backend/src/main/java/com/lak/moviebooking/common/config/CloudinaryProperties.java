@@ -13,9 +13,12 @@ public record CloudinaryProperties(
         String apiKey,
         String apiSecret,
         String folder,
-        @Min(1) @Max(50) int maxUploadMegabytes) {
+        @Min(1) @Max(3) int maxUploadMegabytes) {
 
     public CloudinaryProperties {
+        if (maxUploadMegabytes > 3) {
+            throw new IllegalArgumentException("Cloudinary uploads may not exceed 3 MiB");
+        }
         if (enabled && (blank(cloudName) || blank(apiKey) || blank(apiSecret) || blank(folder))) {
             throw new IllegalArgumentException("Cloudinary credentials and folder are required when media upload is enabled");
         }

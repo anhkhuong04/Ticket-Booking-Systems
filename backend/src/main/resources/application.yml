@@ -99,7 +99,7 @@ app:
       api-key: ${CLOUDINARY_API_KEY:}
       api-secret: ${CLOUDINARY_API_SECRET:}
       folder: ${CLOUDINARY_FOLDER:lak-movies}
-      max-upload-megabytes: ${CLOUDINARY_MAX_UPLOAD_MEGABYTES:5}
+      max-upload-megabytes: ${CLOUDINARY_MAX_UPLOAD_MEGABYTES:3}
   auth:
     jwt-hmac-secret: ${JWT_HMAC_SECRET}
     access-token-ttl: ${ACCESS_TOKEN_TTL:15m}

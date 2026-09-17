@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { updateMovie, type AdminMovie } from './adminApi'
+import { updateMovie, uploadMovieMedia, type AdminMovie } from './adminApi'
 import { MovieEditorForm } from './MovieEditorForm'
 
-vi.mock('./adminApi', () => ({ createMovie: vi.fn(), updateMovie: vi.fn(), uploadPoster: vi.fn() }))
+vi.mock('./adminApi', () => ({ createMovie: vi.fn(), updateMovie: vi.fn(), uploadMovieMedia: vi.fn(), MAX_MOVIE_MEDIA_BYTES: 3 * 1024 * 1024 }))
 
 const movie: AdminMovie = {
   id: 'movie-1', title: 'Film', description: 'Description', durationMinutes: 120, ageRating: 'T13',
@@ -12,7 +12,7 @@ const movie: AdminMovie = {
 }
 
 describe('MovieEditorForm', () => {
-  afterEach(() => { cleanup(); vi.mocked(updateMovie).mockReset() })
+  afterEach(() => { cleanup(); vi.mocked(updateMovie).mockReset(); vi.mocked(uploadMovieMedia).mockReset() })
 
   it('sends ordered credits when editing an existing movie', async () => {
     vi.mocked(updateMovie).mockResolvedValue({ ...movie, status: 'NOW_SHOWING' })
@@ -24,5 +24,14 @@ describe('MovieEditorForm', () => {
       country: 'Việt Nam', director: 'Director', castMembers: ['Actor One', 'Actor Two'], genreIds: ['genre-1'],
     })))
     expect(saved).toHaveBeenCalled()
+  })
+
+  it('rejects a selected file above 3 MB before uploading', async () => {
+    const onError = vi.fn()
+    render(<MovieEditorForm movie={movie} genres={[]} onSaved={vi.fn()} onCancel={vi.fn()} onError={onError} />)
+    const file = new File([new Uint8Array(3 * 1024 * 1024 + 1)], 'poster.png', { type: 'image/png' })
+    fireEvent.change(screen.getByLabelText('Poster phim – chọn tệp'), { target: { files: [file] } })
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tệp vượt quá giới hạn 3 MB.' })))
+    expect(uploadMovieMedia).not.toHaveBeenCalled()
   })
 })

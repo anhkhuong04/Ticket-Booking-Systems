@@ -1297,6 +1297,10 @@ Không hiển thị chart nếu metric đơn giản có thể trình bày rõ h�
 
 # A02 — Movie Management
 
+Filters dùng dữ liệu phim thật đã được backend cấp và được giữ trên URL: tìm theo tên, lọc trạng thái (`Đang chiếu`, `Sắp chiếu`, `Đã lưu trữ`) và thể loại. Khi không khớp, hiển thị trạng thái tìm kiếm rỗng thay vì danh sách giả lập.
+
+Media chỉ chọn tệp từ thiết bị, không có ô nhập URL: poster nhận JPEG/PNG/WebP, trailer nhận MP4/WebM; mỗi tệp tối đa 3 MB. UI báo lỗi trước khi upload nhưng backend vẫn là lớp kiểm tra quyết định.
+
 Table:
 
 - poster;
@@ -1318,6 +1322,8 @@ Actions:
 ---
 
 # A03 — Cinema Management
+
+Filters dùng dữ liệu rạp trong cinema scope do backend trả về: tìm theo tên/địa chỉ/thành phố, lọc thành phố và trạng thái. Filter được giữ trên URL; manager không thể dùng filter để vượt cinema scope.
 
 Table:
 

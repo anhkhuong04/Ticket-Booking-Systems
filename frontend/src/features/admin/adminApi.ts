@@ -1,4 +1,5 @@
 import { apiClient } from '../../shared/api/apiClient'
+import { isAxiosError } from 'axios'
 import type { Genre, MovieDetail } from '../catalog/catalogApi'
 
 export type CinemaAdmin = { id: string; name: string; address: string; city: string; timezone: string; status: 'ACTIVE' | 'INACTIVE'; auditoriumCount: number }
@@ -29,7 +30,15 @@ export async function uploadMovieMedia(file: File) {
   if (!movieMediaTypes.has(file.type) || file.size <= 0 || file.size > MAX_MOVIE_MEDIA_BYTES) {
     throw new Error('Chỉ nhận ảnh JPEG, PNG, WebP hoặc video MP4, WebM không quá 3 MB.')
   }
-  const signed = await signMedia(file)
+  let signed: Awaited<ReturnType<typeof signMedia>>
+  try {
+    signed = await signMedia(file)
+  } catch (error) {
+    if (isAxiosError<{ code?: string }>(error) && error.response?.data?.code === 'MEDIA_UPLOAD_DISABLED') {
+      throw new Error('Tải media chưa được cấu hình. Vui lòng liên hệ quản trị hệ thống.')
+    }
+    throw error
+  }
   const data = new FormData()
   data.set('file', file)
   data.set('api_key', signed.apiKey)
